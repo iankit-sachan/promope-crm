@@ -74,6 +74,9 @@ urlpatterns = [
 
     # Employee Activity Tracking
     path('api/tracking/', include('apps.tracking.urls')),
+
+    # Remote Desktop Control
+    path('api/remote/', include('apps.remote_control.urls')),
 ]
 
 if settings.DEBUG:

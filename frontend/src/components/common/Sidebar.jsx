@@ -6,7 +6,7 @@ import {
   HeartHandshake, Users2, CalendarOff, FileText, Briefcase, BarChart2,
   Wallet, BadgeDollarSign, CreditCard, FileDown,
   Activity, BookOpen, ScrollText, Timer,
-  Target, UserSearch, Kanban, ClipboardList,
+  Target, UserSearch, Kanban, ClipboardList, Monitor,
 } from 'lucide-react'
 import { useChatStore } from '../../store/chatStore'
 import { useAuthStore } from '../../store/authStore'
@@ -48,8 +48,11 @@ const navItems = [
   { to: '/hr/bank-details', label: 'Bank Details',   icon: CreditCard,       roles: ['founder','admin','hr'] },
   { to: '/payslips',        label: 'My Payslips',    icon: FileDown,         roles: ['founder','admin','hr','manager','employee'] },
 
+  // ── Remote Control ────────────────────────────────────────────────────────
+  { to: '/remote-control',   label: 'Remote Control',   icon: Monitor,   roles: ['founder','admin','manager'] },
+
   // ── Activity Tracking module ────────────────────────────────────────────────
-  { to: '/activity-monitor', label: 'Activity Monitor', icon: Activity,     roles: ['founder','admin','manager','hr'] },
+  { to: '/activity-monitor', label: 'Activity Monitor', icon: Activity,     roles: ['founder','admin','hr'] },
   { to: '/daily-report',     label: 'Daily Report',     icon: BookOpen,     roles: ['founder','admin','manager','hr','employee'] },
   { to: '/activity-logs',    label: 'Activity Logs',    icon: ScrollText,   roles: ['founder','admin','manager','hr','employee'] },
   { to: '/time-tracking',    label: 'Time Tracking',    icon: Timer,        roles: ['founder','admin','manager','hr','employee'] },

@@ -29,7 +29,7 @@ class ActivityLogListView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         qs = ActivityLog.objects.select_related('actor').all()
-        if not user.is_manager_or_above:
+        if not user.is_hr_or_above:
             qs = qs.filter(actor=user)
         # Optional date filter
         date_from = self.request.query_params.get('date_from')

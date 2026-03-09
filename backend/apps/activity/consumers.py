@@ -28,6 +28,12 @@ class ActivityFeedConsumer(AsyncWebsocketConsumer):
             await self.close(code=4001)
             return
 
+        # Only founder / admin / hr can watch the global activity feed.
+        # Managers and employees are not permitted to see other users' activity.
+        if not user.is_hr_or_above:
+            await self.close(code=4003)
+            return
+
         await self.channel_layer.group_add(self.GROUP_NAME, self.channel_name)
         await self.accept()
 

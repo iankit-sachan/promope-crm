@@ -45,6 +45,7 @@ LOCAL_APPS = [
     'apps.chat',
     'apps.hr',
     'apps.tracking',
+    'apps.remote_control',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

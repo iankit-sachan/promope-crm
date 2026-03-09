@@ -255,6 +255,15 @@ export const hrService = {
   taskDelete:  (id)            => api.delete(`/hr/tasks/${id}/`),
 }
 
+export const remoteService = {
+  agentList:      ()       => api.get('/remote/agents/'),
+  myToken:        ()       => api.get('/remote/agents/my-token/'),
+  registerAgent:  (data)   => api.post('/remote/agents/register/', data),
+  sessionList:    ()       => api.get('/remote/sessions/'),
+  requestSession: (data)   => api.post('/remote/sessions/request/', data),
+  endSession:     (id)     => api.post(`/remote/sessions/${id}/end/`),
+}
+
 export const payrollService = {
   // Payroll dashboard
   dashboard:       (params)   => api.get('/hr/payroll/', { params }),

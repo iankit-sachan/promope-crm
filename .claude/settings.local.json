@@ -164,7 +164,17 @@
       "Bash(grep -rn \"0x\\\\|#[a-f0-9]\\\\{6\\\\}\\\\|[0-9]\\\\{5,\\\\}\" /f/CRM/frontend/src/pages/*.jsx)",
       "Bash(xargs grep -l \"celery\\\\|Celery\\\\|@task\\\\|@periodic_task\")",
       "Bash(git --version)",
-      "Bash(gh --version)"
+      "Bash(gh --version)",
+      "Bash(winget --version)",
+      "Bash(winget install --id GitHub.cli --silent --accept-source-agreements --accept-package-agreements)",
+      "Bash(export PATH=\"$PATH:/c/Program Files/GitHub CLI\")",
+      "Bash(gh auth status)",
+      "Bash(gh auth login --web --git-protocol https)",
+      "Bash(gh repo create promope-crm --private --source=. --remote=origin --push)",
+      "Bash(python manage.py makemigrations remote_control)",
+      "Bash(curl -s http://localhost:8000/api/remote/agents/ -H \"Authorization: Bearer invalid\")",
+      "Bash(python -W ignore manage.py shell --no-input -c \":*)",
+      "Bash(python manage.py shell -i python -c \":*)"
     ]
   }
 }

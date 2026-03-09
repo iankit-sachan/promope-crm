@@ -44,6 +44,9 @@ import SalaryManagement       from './pages/hr/SalaryManagement'
 import EmployeeBankDetailsPage from './pages/hr/EmployeeBankDetailsPage'
 import PayslipViewer          from './pages/hr/PayslipViewer'
 
+// Remote Control
+import RemoteControlPage from './pages/RemoteControlPage'
+
 // Activity Tracking pages
 import ActivityMonitorDashboard from './pages/ActivityMonitorDashboard'
 import DailyReportPage          from './pages/DailyReportPage'
@@ -246,9 +249,16 @@ export default function App() {
           </ProtectedRoute>
         } />
 
+        {/* ── Remote Control ───────────────────────────────────────── */}
+        <Route path="/remote-control" element={
+          <ProtectedRoute requiredRoles={['founder', 'admin', 'manager']}>
+            <RemoteControlPage />
+          </ProtectedRoute>
+        } />
+
         {/* ── Activity Tracking module ──────────────────────────────── */}
         <Route path="/activity-monitor" element={
-          <ProtectedRoute requiredRoles={['founder', 'admin', 'manager', 'hr']}>
+          <ProtectedRoute requiredRoles={['founder', 'admin', 'hr']}>
             <ActivityMonitorDashboard />
           </ProtectedRoute>
         } />

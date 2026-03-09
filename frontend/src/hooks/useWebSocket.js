@@ -10,14 +10,19 @@ import { useActivityStore } from '../store/activityStore'
 
 const WS_BASE = import.meta.env.VITE_WS_URL || `ws://${window.location.host}`
 
+/** Roles permitted to watch the global activity feed. */
+const ACTIVITY_FEED_ROLES = ['founder', 'admin', 'hr']
+
 export function useActivityFeed() {
   const wsRef = useRef(null)
   const reconnectTimerRef = useRef(null)
-  const { isAuthenticated, accessToken } = useAuthStore()
+  const { isAuthenticated, accessToken, user } = useAuthStore()
   const { addActivity, setInitialFeed, setConnected } = useActivityStore()
 
   const connect = useCallback(() => {
     if (!isAuthenticated || !accessToken) return
+    // Only founder / admin / hr are allowed to watch the global feed.
+    if (!ACTIVITY_FEED_ROLES.includes(user?.role)) return
 
     // Append token as query param (simplest auth for WS)
     const url = `${WS_BASE}/ws/activity/?token=${accessToken}`
@@ -61,7 +66,7 @@ export function useActivityFeed() {
     }, 30000)
 
     return () => clearInterval(pingInterval)
-  }, [isAuthenticated, accessToken, addActivity, setInitialFeed, setConnected])
+  }, [isAuthenticated, accessToken, user, addActivity, setInitialFeed, setConnected])
 
   useEffect(() => {
     connect()
