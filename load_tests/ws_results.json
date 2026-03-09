@@ -1,0 +1,37 @@
+{
+  "total_attempted": 100,
+  "total_connected": 40,
+  "total_failed": 60,
+  "total_disconnected": 0,
+  "connection_rate_pct": 40.0,
+  "latency": {
+    "samples": 515,
+    "avg_ms": 1.66,
+    "p50_ms": 0.0,
+    "p95_ms": 16.0,
+    "p99_ms": 16.0
+  },
+  "by_type": {
+    "activity": {
+      "attempted": 40,
+      "connected": 40,
+      "disconnected": 0,
+      "messages_sent": 515,
+      "messages_recv": 555
+    },
+    "chat": {
+      "attempted": 30,
+      "connected": 0,
+      "disconnected": 0,
+      "messages_sent": 0,
+      "messages_recv": 0
+    },
+    "notifications": {
+      "attempted": 30,
+      "connected": 0,
+      "disconnected": 0,
+      "messages_sent": 0,
+      "messages_recv": 0
+    }
+  }
+}

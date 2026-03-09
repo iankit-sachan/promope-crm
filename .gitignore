@@ -1,0 +1,83 @@
+# ── Python / Django ────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pycache
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+ENV/
+
+# Django
+*.sqlite3
+*.db
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Django media & static (generated)
+media/
+staticfiles/
+static_collected/
+
+# Django migrations (optional — keep if you want to track migrations)
+# apps/*/migrations/
+
+# ── Environment & Secrets ──────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.json
+
+# ── Node / React / Vite ────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build output
+dist/
+build/
+.vite/
+frontend/dist/
+
+# ── IDE / Editor ──────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+logs/
+*.pid
+
+# ── Test & Coverage ───────────────────────────────────────────────────────────
+.coverage
+htmlcov/
+.pytest_cache/
+coverage.xml
+*.cover
+.hypothesis/
+
+# ── Load test artifacts ───────────────────────────────────────────────────────
+load_tests/results/
+load_tests/*.html
+load_tests/*.csv
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+*.bak
+*.tmp
+*.orig
+nul

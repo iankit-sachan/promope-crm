@@ -1,0 +1,1235 @@
+{
+  "users": [
+    {
+      "index": 1,
+      "email": "loadtest_user_001@test.com",
+      "password": "LoadTest123!",
+      "role": "founder",
+      "user_id": 312,
+      "full_name": "LoadTest User 001"
+    },
+    {
+      "index": 2,
+      "email": "loadtest_user_002@test.com",
+      "password": "LoadTest123!",
+      "role": "admin",
+      "user_id": 313,
+      "full_name": "LoadTest User 002"
+    },
+    {
+      "index": 3,
+      "email": "loadtest_user_003@test.com",
+      "password": "LoadTest123!",
+      "role": "admin",
+      "user_id": 314,
+      "full_name": "LoadTest User 003"
+    },
+    {
+      "index": 4,
+      "email": "loadtest_user_004@test.com",
+      "password": "LoadTest123!",
+      "role": "hr",
+      "user_id": 315,
+      "full_name": "LoadTest User 004"
+    },
+    {
+      "index": 5,
+      "email": "loadtest_user_005@test.com",
+      "password": "LoadTest123!",
+      "role": "hr",
+      "user_id": 316,
+      "full_name": "LoadTest User 005"
+    },
+    {
+      "index": 6,
+      "email": "loadtest_user_006@test.com",
+      "password": "LoadTest123!",
+      "role": "manager",
+      "user_id": 317,
+      "full_name": "LoadTest User 006"
+    },
+    {
+      "index": 7,
+      "email": "loadtest_user_007@test.com",
+      "password": "LoadTest123!",
+      "role": "manager",
+      "user_id": 318,
+      "full_name": "LoadTest User 007"
+    },
+    {
+      "index": 8,
+      "email": "loadtest_user_008@test.com",
+      "password": "LoadTest123!",
+      "role": "manager",
+      "user_id": 319,
+      "full_name": "LoadTest User 008"
+    },
+    {
+      "index": 9,
+      "email": "loadtest_user_009@test.com",
+      "password": "LoadTest123!",
+      "role": "manager",
+      "user_id": 320,
+      "full_name": "LoadTest User 009"
+    },
+    {
+      "index": 10,
+      "email": "loadtest_user_010@test.com",
+      "password": "LoadTest123!",
+      "role": "manager",
+      "user_id": 321,
+      "full_name": "LoadTest User 010"
+    },
+    {
+      "index": 11,
+      "email": "loadtest_user_011@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 322,
+      "full_name": "LoadTest User 011"
+    },
+    {
+      "index": 12,
+      "email": "loadtest_user_012@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 323,
+      "full_name": "LoadTest User 012"
+    },
+    {
+      "index": 13,
+      "email": "loadtest_user_013@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 324,
+      "full_name": "LoadTest User 013"
+    },
+    {
+      "index": 14,
+      "email": "loadtest_user_014@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 325,
+      "full_name": "LoadTest User 014"
+    },
+    {
+      "index": 15,
+      "email": "loadtest_user_015@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 326,
+      "full_name": "LoadTest User 015"
+    },
+    {
+      "index": 16,
+      "email": "loadtest_user_016@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 327,
+      "full_name": "LoadTest User 016"
+    },
+    {
+      "index": 17,
+      "email": "loadtest_user_017@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 328,
+      "full_name": "LoadTest User 017"
+    },
+    {
+      "index": 18,
+      "email": "loadtest_user_018@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 329,
+      "full_name": "LoadTest User 018"
+    },
+    {
+      "index": 19,
+      "email": "loadtest_user_019@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 330,
+      "full_name": "LoadTest User 019"
+    },
+    {
+      "index": 20,
+      "email": "loadtest_user_020@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 331,
+      "full_name": "LoadTest User 020"
+    },
+    {
+      "index": 21,
+      "email": "loadtest_user_021@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 332,
+      "full_name": "LoadTest User 021"
+    },
+    {
+      "index": 22,
+      "email": "loadtest_user_022@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 333,
+      "full_name": "LoadTest User 022"
+    },
+    {
+      "index": 23,
+      "email": "loadtest_user_023@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 334,
+      "full_name": "LoadTest User 023"
+    },
+    {
+      "index": 24,
+      "email": "loadtest_user_024@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 335,
+      "full_name": "LoadTest User 024"
+    },
+    {
+      "index": 25,
+      "email": "loadtest_user_025@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 336,
+      "full_name": "LoadTest User 025"
+    },
+    {
+      "index": 26,
+      "email": "loadtest_user_026@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 337,
+      "full_name": "LoadTest User 026"
+    },
+    {
+      "index": 27,
+      "email": "loadtest_user_027@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 338,
+      "full_name": "LoadTest User 027"
+    },
+    {
+      "index": 28,
+      "email": "loadtest_user_028@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 339,
+      "full_name": "LoadTest User 028"
+    },
+    {
+      "index": 29,
+      "email": "loadtest_user_029@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 340,
+      "full_name": "LoadTest User 029"
+    },
+    {
+      "index": 30,
+      "email": "loadtest_user_030@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 341,
+      "full_name": "LoadTest User 030"
+    },
+    {
+      "index": 31,
+      "email": "loadtest_user_031@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 342,
+      "full_name": "LoadTest User 031"
+    },
+    {
+      "index": 32,
+      "email": "loadtest_user_032@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 343,
+      "full_name": "LoadTest User 032"
+    },
+    {
+      "index": 33,
+      "email": "loadtest_user_033@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 344,
+      "full_name": "LoadTest User 033"
+    },
+    {
+      "index": 34,
+      "email": "loadtest_user_034@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 345,
+      "full_name": "LoadTest User 034"
+    },
+    {
+      "index": 35,
+      "email": "loadtest_user_035@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 346,
+      "full_name": "LoadTest User 035"
+    },
+    {
+      "index": 36,
+      "email": "loadtest_user_036@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 347,
+      "full_name": "LoadTest User 036"
+    },
+    {
+      "index": 37,
+      "email": "loadtest_user_037@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 348,
+      "full_name": "LoadTest User 037"
+    },
+    {
+      "index": 38,
+      "email": "loadtest_user_038@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 349,
+      "full_name": "LoadTest User 038"
+    },
+    {
+      "index": 39,
+      "email": "loadtest_user_039@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 350,
+      "full_name": "LoadTest User 039"
+    },
+    {
+      "index": 40,
+      "email": "loadtest_user_040@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 351,
+      "full_name": "LoadTest User 040"
+    },
+    {
+      "index": 41,
+      "email": "loadtest_user_041@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 352,
+      "full_name": "LoadTest User 041"
+    },
+    {
+      "index": 42,
+      "email": "loadtest_user_042@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 353,
+      "full_name": "LoadTest User 042"
+    },
+    {
+      "index": 43,
+      "email": "loadtest_user_043@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 354,
+      "full_name": "LoadTest User 043"
+    },
+    {
+      "index": 44,
+      "email": "loadtest_user_044@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 355,
+      "full_name": "LoadTest User 044"
+    },
+    {
+      "index": 45,
+      "email": "loadtest_user_045@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 356,
+      "full_name": "LoadTest User 045"
+    },
+    {
+      "index": 46,
+      "email": "loadtest_user_046@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 357,
+      "full_name": "LoadTest User 046"
+    },
+    {
+      "index": 47,
+      "email": "loadtest_user_047@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 358,
+      "full_name": "LoadTest User 047"
+    },
+    {
+      "index": 48,
+      "email": "loadtest_user_048@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 359,
+      "full_name": "LoadTest User 048"
+    },
+    {
+      "index": 49,
+      "email": "loadtest_user_049@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 360,
+      "full_name": "LoadTest User 049"
+    },
+    {
+      "index": 50,
+      "email": "loadtest_user_050@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 361,
+      "full_name": "LoadTest User 050"
+    },
+    {
+      "index": 51,
+      "email": "loadtest_user_051@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 362,
+      "full_name": "LoadTest User 051"
+    },
+    {
+      "index": 52,
+      "email": "loadtest_user_052@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 363,
+      "full_name": "LoadTest User 052"
+    },
+    {
+      "index": 53,
+      "email": "loadtest_user_053@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 364,
+      "full_name": "LoadTest User 053"
+    },
+    {
+      "index": 54,
+      "email": "loadtest_user_054@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 365,
+      "full_name": "LoadTest User 054"
+    },
+    {
+      "index": 55,
+      "email": "loadtest_user_055@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 366,
+      "full_name": "LoadTest User 055"
+    },
+    {
+      "index": 56,
+      "email": "loadtest_user_056@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 367,
+      "full_name": "LoadTest User 056"
+    },
+    {
+      "index": 57,
+      "email": "loadtest_user_057@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 368,
+      "full_name": "LoadTest User 057"
+    },
+    {
+      "index": 58,
+      "email": "loadtest_user_058@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 369,
+      "full_name": "LoadTest User 058"
+    },
+    {
+      "index": 59,
+      "email": "loadtest_user_059@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 370,
+      "full_name": "LoadTest User 059"
+    },
+    {
+      "index": 60,
+      "email": "loadtest_user_060@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 371,
+      "full_name": "LoadTest User 060"
+    },
+    {
+      "index": 61,
+      "email": "loadtest_user_061@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 372,
+      "full_name": "LoadTest User 061"
+    },
+    {
+      "index": 62,
+      "email": "loadtest_user_062@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 373,
+      "full_name": "LoadTest User 062"
+    },
+    {
+      "index": 63,
+      "email": "loadtest_user_063@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 374,
+      "full_name": "LoadTest User 063"
+    },
+    {
+      "index": 64,
+      "email": "loadtest_user_064@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 375,
+      "full_name": "LoadTest User 064"
+    },
+    {
+      "index": 65,
+      "email": "loadtest_user_065@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 376,
+      "full_name": "LoadTest User 065"
+    },
+    {
+      "index": 66,
+      "email": "loadtest_user_066@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 377,
+      "full_name": "LoadTest User 066"
+    },
+    {
+      "index": 67,
+      "email": "loadtest_user_067@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 378,
+      "full_name": "LoadTest User 067"
+    },
+    {
+      "index": 68,
+      "email": "loadtest_user_068@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 379,
+      "full_name": "LoadTest User 068"
+    },
+    {
+      "index": 69,
+      "email": "loadtest_user_069@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 380,
+      "full_name": "LoadTest User 069"
+    },
+    {
+      "index": 70,
+      "email": "loadtest_user_070@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 381,
+      "full_name": "LoadTest User 070"
+    },
+    {
+      "index": 71,
+      "email": "loadtest_user_071@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 382,
+      "full_name": "LoadTest User 071"
+    },
+    {
+      "index": 72,
+      "email": "loadtest_user_072@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 383,
+      "full_name": "LoadTest User 072"
+    },
+    {
+      "index": 73,
+      "email": "loadtest_user_073@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 384,
+      "full_name": "LoadTest User 073"
+    },
+    {
+      "index": 74,
+      "email": "loadtest_user_074@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 385,
+      "full_name": "LoadTest User 074"
+    },
+    {
+      "index": 75,
+      "email": "loadtest_user_075@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 386,
+      "full_name": "LoadTest User 075"
+    },
+    {
+      "index": 76,
+      "email": "loadtest_user_076@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 387,
+      "full_name": "LoadTest User 076"
+    },
+    {
+      "index": 77,
+      "email": "loadtest_user_077@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 388,
+      "full_name": "LoadTest User 077"
+    },
+    {
+      "index": 78,
+      "email": "loadtest_user_078@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 389,
+      "full_name": "LoadTest User 078"
+    },
+    {
+      "index": 79,
+      "email": "loadtest_user_079@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 390,
+      "full_name": "LoadTest User 079"
+    },
+    {
+      "index": 80,
+      "email": "loadtest_user_080@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 391,
+      "full_name": "LoadTest User 080"
+    },
+    {
+      "index": 81,
+      "email": "loadtest_user_081@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 392,
+      "full_name": "LoadTest User 081"
+    },
+    {
+      "index": 82,
+      "email": "loadtest_user_082@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 393,
+      "full_name": "LoadTest User 082"
+    },
+    {
+      "index": 83,
+      "email": "loadtest_user_083@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 394,
+      "full_name": "LoadTest User 083"
+    },
+    {
+      "index": 84,
+      "email": "loadtest_user_084@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 395,
+      "full_name": "LoadTest User 084"
+    },
+    {
+      "index": 85,
+      "email": "loadtest_user_085@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 396,
+      "full_name": "LoadTest User 085"
+    },
+    {
+      "index": 86,
+      "email": "loadtest_user_086@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 397,
+      "full_name": "LoadTest User 086"
+    },
+    {
+      "index": 87,
+      "email": "loadtest_user_087@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 398,
+      "full_name": "LoadTest User 087"
+    },
+    {
+      "index": 88,
+      "email": "loadtest_user_088@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 399,
+      "full_name": "LoadTest User 088"
+    },
+    {
+      "index": 89,
+      "email": "loadtest_user_089@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 400,
+      "full_name": "LoadTest User 089"
+    },
+    {
+      "index": 90,
+      "email": "loadtest_user_090@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 401,
+      "full_name": "LoadTest User 090"
+    },
+    {
+      "index": 91,
+      "email": "loadtest_user_091@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 402,
+      "full_name": "LoadTest User 091"
+    },
+    {
+      "index": 92,
+      "email": "loadtest_user_092@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 403,
+      "full_name": "LoadTest User 092"
+    },
+    {
+      "index": 93,
+      "email": "loadtest_user_093@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 404,
+      "full_name": "LoadTest User 093"
+    },
+    {
+      "index": 94,
+      "email": "loadtest_user_094@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 405,
+      "full_name": "LoadTest User 094"
+    },
+    {
+      "index": 95,
+      "email": "loadtest_user_095@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 406,
+      "full_name": "LoadTest User 095"
+    },
+    {
+      "index": 96,
+      "email": "loadtest_user_096@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 407,
+      "full_name": "LoadTest User 096"
+    },
+    {
+      "index": 97,
+      "email": "loadtest_user_097@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 408,
+      "full_name": "LoadTest User 097"
+    },
+    {
+      "index": 98,
+      "email": "loadtest_user_098@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 409,
+      "full_name": "LoadTest User 098"
+    },
+    {
+      "index": 99,
+      "email": "loadtest_user_099@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 410,
+      "full_name": "LoadTest User 099"
+    },
+    {
+      "index": 100,
+      "email": "loadtest_user_100@test.com",
+      "password": "LoadTest123!",
+      "role": "employee",
+      "user_id": 411,
+      "full_name": "LoadTest User 100"
+    }
+  ],
+  "task_ids": [
+    619,
+    620,
+    621,
+    622,
+    623,
+    624,
+    625,
+    626,
+    627,
+    628,
+    629,
+    630,
+    631,
+    632,
+    633,
+    634,
+    635,
+    636,
+    637,
+    638,
+    639,
+    640,
+    641,
+    642,
+    643,
+    644,
+    645,
+    646,
+    647,
+    648,
+    649,
+    650,
+    651,
+    652,
+    653,
+    654,
+    655,
+    656,
+    657,
+    658,
+    659,
+    660,
+    661,
+    662,
+    663,
+    664,
+    665,
+    666,
+    667,
+    668,
+    669,
+    670,
+    671,
+    672,
+    673,
+    674,
+    675,
+    676,
+    677,
+    678,
+    679,
+    680,
+    681,
+    682,
+    683,
+    684,
+    685,
+    686,
+    687,
+    688,
+    689,
+    690,
+    691,
+    692,
+    693,
+    694,
+    695,
+    696,
+    697,
+    698,
+    699,
+    700,
+    701,
+    702,
+    703,
+    704,
+    705,
+    706,
+    707,
+    708,
+    709,
+    710,
+    711,
+    712,
+    713,
+    714,
+    715,
+    716,
+    717,
+    718,
+    719,
+    720,
+    721,
+    722,
+    723,
+    724,
+    725,
+    726,
+    727,
+    728,
+    729,
+    730,
+    731,
+    732,
+    733,
+    734,
+    735,
+    736,
+    737,
+    738,
+    739,
+    740,
+    741,
+    742,
+    743,
+    744,
+    745,
+    746,
+    747,
+    748,
+    749,
+    750,
+    751,
+    752,
+    753,
+    754,
+    755,
+    756,
+    757,
+    758,
+    759,
+    760,
+    761,
+    762,
+    763,
+    764,
+    765,
+    766,
+    767,
+    768,
+    769,
+    770,
+    771,
+    772,
+    773,
+    774,
+    775,
+    776,
+    777,
+    778,
+    779,
+    780,
+    781,
+    782,
+    783,
+    784,
+    785,
+    786,
+    787,
+    788,
+    789,
+    790,
+    791,
+    792,
+    793,
+    794,
+    795,
+    796,
+    797,
+    798,
+    799,
+    800,
+    801,
+    802,
+    803,
+    804,
+    805,
+    806,
+    807,
+    808,
+    809,
+    810,
+    811,
+    812,
+    813,
+    814,
+    815,
+    816,
+    817,
+    818
+  ],
+  "conversation_ids": [
+    64,
+    65,
+    66,
+    67,
+    68,
+    69,
+    70,
+    71,
+    72,
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79,
+    80,
+    81,
+    82,
+    83
+  ],
+  "chat_workers": [
+    {
+      "email": "loadtest_user_011@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 64
+    },
+    {
+      "email": "loadtest_user_012@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 64
+    },
+    {
+      "email": "loadtest_user_013@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 65
+    },
+    {
+      "email": "loadtest_user_014@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 65
+    },
+    {
+      "email": "loadtest_user_015@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 66
+    },
+    {
+      "email": "loadtest_user_016@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 66
+    },
+    {
+      "email": "loadtest_user_017@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 67
+    },
+    {
+      "email": "loadtest_user_018@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 67
+    },
+    {
+      "email": "loadtest_user_019@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 68
+    },
+    {
+      "email": "loadtest_user_020@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 68
+    },
+    {
+      "email": "loadtest_user_021@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 69
+    },
+    {
+      "email": "loadtest_user_022@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 69
+    },
+    {
+      "email": "loadtest_user_023@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 70
+    },
+    {
+      "email": "loadtest_user_024@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 70
+    },
+    {
+      "email": "loadtest_user_025@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 71
+    },
+    {
+      "email": "loadtest_user_026@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 71
+    },
+    {
+      "email": "loadtest_user_027@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 72
+    },
+    {
+      "email": "loadtest_user_028@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 72
+    },
+    {
+      "email": "loadtest_user_029@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 73
+    },
+    {
+      "email": "loadtest_user_030@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 73
+    },
+    {
+      "email": "loadtest_user_031@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 74
+    },
+    {
+      "email": "loadtest_user_032@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 74
+    },
+    {
+      "email": "loadtest_user_033@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 75
+    },
+    {
+      "email": "loadtest_user_034@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 75
+    },
+    {
+      "email": "loadtest_user_035@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 76
+    },
+    {
+      "email": "loadtest_user_036@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 76
+    },
+    {
+      "email": "loadtest_user_037@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 77
+    },
+    {
+      "email": "loadtest_user_038@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 77
+    },
+    {
+      "email": "loadtest_user_039@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 78
+    },
+    {
+      "email": "loadtest_user_040@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 78
+    },
+    {
+      "email": "loadtest_user_041@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 79
+    },
+    {
+      "email": "loadtest_user_042@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 79
+    },
+    {
+      "email": "loadtest_user_043@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 80
+    },
+    {
+      "email": "loadtest_user_044@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 80
+    },
+    {
+      "email": "loadtest_user_045@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 81
+    },
+    {
+      "email": "loadtest_user_046@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 81
+    },
+    {
+      "email": "loadtest_user_047@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 82
+    },
+    {
+      "email": "loadtest_user_048@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 82
+    },
+    {
+      "email": "loadtest_user_049@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 83
+    },
+    {
+      "email": "loadtest_user_050@test.com",
+      "password": "LoadTest123!",
+      "conv_id": 83
+    }
+  ],
+  "group_ids": [
+    11,
+    12,
+    13
+  ]
+}
