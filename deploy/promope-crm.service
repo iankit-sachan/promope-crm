@@ -1,0 +1,37 @@
+[Unit]
+Description=Promope CRM — Daphne ASGI Server
+# NOTE: Using Daphne (not Gunicorn) because this project uses
+# Django Channels for WebSocket support. Daphne handles both
+# HTTP and WebSocket connections in a single ASGI process.
+After=network.target postgresql.service redis.service
+Wants=postgresql.service redis.service
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/promope-crm/backend
+
+# Load all environment variables from .env file
+EnvironmentFile=/home/ubuntu/promope-crm/backend/.env
+
+# Start Daphne ASGI server on localhost:8000
+# Nginx proxies port 80 → 8000
+ExecStart=/home/ubuntu/promope-crm/venv/bin/daphne \
+    -b 127.0.0.1 \
+    -p 8000 \
+    --access-log /var/log/promope-crm/access.log \
+    config.asgi:application
+
+# Restart policy
+Restart=on-failure
+RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=promope-crm
+
+[Install]
+WantedBy=multi-user.target
