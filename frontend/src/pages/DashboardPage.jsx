@@ -2,9 +2,9 @@ import { useQuery } from '@tanstack/react-query'
 import {
   Users, CheckSquare, Clock, AlertTriangle,
   TrendingUp, Activity, UserCheck, XCircle,
-  CalendarDays, LogIn, LogOut, Timer,
+  CalendarDays, LogIn, LogOut, Timer, FileText, AlertCircle,
 } from 'lucide-react'
-import { analyticsService, taskService, attendanceService } from '../services/api'
+import { analyticsService, taskService, attendanceService, dailyReportService } from '../services/api'
 import StatCard from '../components/common/StatCard'
 import LiveActivityFeed from '../components/dashboard/LiveActivityFeed'
 import TaskMonitoringTable from '../components/dashboard/TaskMonitoringTable'
@@ -181,6 +181,12 @@ function AdminDashboard({ user }) {
     queryFn: () => analyticsService.tasksByPriority().then(r => r.data),
   })
 
+  const { data: reportAnalytics } = useQuery({
+    queryKey: ['daily-report-analytics'],
+    queryFn: () => dailyReportService.analytics().then(r => r.data),
+    refetchInterval: 60000,
+  })
+
   if (statsLoading) return <LoadingSpinner text="Loading dashboard..." />
 
   const emp   = stats?.employees || {}
@@ -257,6 +263,24 @@ function AdminDashboard({ user }) {
           icon={TrendingUp}
           color="purple"
           subtitle="All time"
+        />
+      </div>
+
+      {/* Daily Reports Row */}
+      <div className="grid grid-cols-2 gap-4">
+        <StatCard
+          title="Reports Today"
+          value={reportAnalytics?.submitted_today ?? '—'}
+          icon={FileText}
+          color="green"
+          subtitle="Submitted today"
+        />
+        <StatCard
+          title="Not Submitted"
+          value={reportAnalytics?.not_submitted_today ?? '—'}
+          icon={AlertCircle}
+          color="orange"
+          subtitle="Missing today's report"
         />
       </div>
 

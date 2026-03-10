@@ -77,6 +77,9 @@ urlpatterns = [
 
     # Remote Desktop Control
     path('api/remote/', include('apps.remote_control.urls')),
+
+    # Daily Reports
+    path('api/daily-reports/', include('apps.daily_reports.urls')),
 ]
 
 if settings.DEBUG:

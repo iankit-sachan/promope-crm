@@ -46,6 +46,7 @@ LOCAL_APPS = [
     'apps.hr',
     'apps.tracking',
     'apps.remote_control',
+    'apps.daily_reports',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

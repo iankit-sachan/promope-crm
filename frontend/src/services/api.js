@@ -377,3 +377,24 @@ export const hiringService = {
   }),
   docDelete:       (id)        => api.delete(`/hr/candidate-documents/${id}/`),
 }
+
+// ── Daily Reports ─────────────────────────────────────────────────────────────
+export const dailyReportService = {
+  list:      (params) => api.get('/daily-reports/', { params }),
+  myReports: (params) => api.get('/daily-reports/my-reports/', { params }),
+  all:       (params) => api.get('/daily-reports/all/', { params }),
+  analytics: ()       => api.get('/daily-reports/analytics/'),
+  get:       (id)     => api.get(`/daily-reports/${id}/`),
+  create:    (data)   => {
+    const isForm = data instanceof FormData
+    return api.post('/daily-reports/', data,
+      isForm ? { headers: { 'Content-Type': 'multipart/form-data' } } : {})
+  },
+  update:    (id, data) => {
+    const isForm = data instanceof FormData
+    return api.patch(`/daily-reports/${id}/`, data,
+      isForm ? { headers: { 'Content-Type': 'multipart/form-data' } } : {})
+  },
+  submit:    (id)       => api.post(`/daily-reports/${id}/submit/`),
+  review:    (id, data) => api.patch(`/daily-reports/${id}/review/`, data),
+}
