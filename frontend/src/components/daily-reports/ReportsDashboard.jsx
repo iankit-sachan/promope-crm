@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, Fragment } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { dailyReportService } from '../../services/api'
 import { employeeService, departmentService } from '../../services/api'
@@ -214,9 +214,8 @@ export default function ReportsDashboard() {
               </thead>
               <tbody>
                 {reports.map((report) => (
-                  <>
+                  <Fragment key={report.id}>
                     <tr
-                      key={report.id}
                       className="border-t border-slate-700/50 hover:bg-slate-700/20"
                     >
                       <td className="td">
@@ -263,7 +262,7 @@ export default function ReportsDashboard() {
                       </td>
                     </tr>
                     {expanded === report.id && (
-                      <tr key={`${report.id}-exp`} className="border-t border-slate-700/30 bg-slate-800/30">
+                      <tr className="border-t border-slate-700/30 bg-slate-800/30">
                         <td colSpan={7} className="px-6 py-4 space-y-3">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <DetailBlock label="Tasks Assigned"   text={report.tasks_assigned} />
@@ -286,7 +285,7 @@ export default function ReportsDashboard() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 ))}
               </tbody>
             </table>

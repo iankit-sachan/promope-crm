@@ -98,8 +98,9 @@ export const progressColor = (pct) => {
  * Returns initials from a full name, e.g. "Rahul Sharma" → "RS"
  */
 export const initials = (name = '') => {
-  return name
+  return (name || '')
     .split(' ')
+    .filter(Boolean)
     .map((n) => n[0])
     .join('')
     .toUpperCase()
