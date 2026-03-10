@@ -217,11 +217,11 @@ export default function ActivityMonitorDashboard() {
           <div className="flex flex-wrap gap-3 items-end">
             <div>
               <label className="label">From</label>
-              <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="input-field" />
+              <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="input" />
             </div>
             <div>
               <label className="label">To</label>
-              <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="input-field" />
+              <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="input" />
             </div>
             <button onClick={() => refetchProd()} className="btn-primary text-sm">Apply</button>
           </div>

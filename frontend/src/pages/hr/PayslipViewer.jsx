@@ -247,7 +247,7 @@ export default function PayslipViewer() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search employees..."
-                className="input-field w-full pl-9"
+                className="input w-full pl-9"
               />
             </div>
 
@@ -256,7 +256,7 @@ export default function PayslipViewer() {
               <select
                 value={filterEmployee}
                 onChange={(e) => setFilterEmployee(e.target.value)}
-                className="input-field pr-8 appearance-none"
+                className="input pr-8 appearance-none"
               >
                 <option value="">All Employees</option>
                 {employees.map((e) => (
@@ -275,7 +275,7 @@ export default function PayslipViewer() {
           <select
             value={filterMonth}
             onChange={(e) => setFilterMonth(e.target.value)}
-            className="input-field pr-8 appearance-none"
+            className="input pr-8 appearance-none"
           >
             <option value="">All Months</option>
             {Array.from({ length: 12 }, (_, i) => (
@@ -292,7 +292,7 @@ export default function PayslipViewer() {
           <select
             value={filterYear}
             onChange={(e) => setFilterYear(e.target.value)}
-            className="input-field pr-8 appearance-none"
+            className="input pr-8 appearance-none"
           >
             <option value="">All Years</option>
             {[now.getFullYear(), now.getFullYear() - 1, now.getFullYear() - 2].map((y) => (

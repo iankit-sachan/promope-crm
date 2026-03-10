@@ -49,7 +49,7 @@ function SalaryModal({ onClose, onSave, initial = null, employees = [] }) {
         step="0.01"
         value={form[key]}
         onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
-        className="input-field w-full"
+        className="input w-full"
         placeholder="0.00"
       />
     </div>
@@ -76,7 +76,7 @@ function SalaryModal({ onClose, onSave, initial = null, employees = [] }) {
               <select
                 value={form.employee}
                 onChange={(e) => setForm((p) => ({ ...p, employee: e.target.value }))}
-                className="input-field w-full"
+                className="input w-full"
               >
                 <option value="">Select employee</option>
                 {employees.map((e) => (
@@ -133,7 +133,7 @@ function SalaryModal({ onClose, onSave, initial = null, employees = [] }) {
               <select
                 value={form.salary_cycle}
                 onChange={(e) => setForm((p) => ({ ...p, salary_cycle: e.target.value }))}
-                className="input-field w-full"
+                className="input w-full"
               >
                 <option value="monthly">Monthly</option>
                 <option value="bimonthly">Bi-monthly</option>
@@ -146,7 +146,7 @@ function SalaryModal({ onClose, onSave, initial = null, employees = [] }) {
                 type="date"
                 value={form.effective_from}
                 onChange={(e) => setForm((p) => ({ ...p, effective_from: e.target.value }))}
-                className="input-field w-full"
+                className="input w-full"
               />
             </div>
           </div>
@@ -196,7 +196,7 @@ function CreatePaymentModal({ onClose, onSave, employees = [] }) {
             <select
               value={form.employee}
               onChange={(e) => setForm((p) => ({ ...p, employee: e.target.value }))}
-              className="input-field w-full"
+              className="input w-full"
             >
               <option value="">Select employee</option>
               {employees.map((e) => (
@@ -213,7 +213,7 @@ function CreatePaymentModal({ onClose, onSave, employees = [] }) {
               <select
                 value={form.month}
                 onChange={(e) => setForm((p) => ({ ...p, month: +e.target.value }))}
-                className="input-field w-full"
+                className="input w-full"
               >
                 {Array.from({ length: 12 }, (_, i) => (
                   <option key={i + 1} value={i + 1}>
@@ -230,7 +230,7 @@ function CreatePaymentModal({ onClose, onSave, employees = [] }) {
                 onChange={(e) => setForm((p) => ({ ...p, year: +e.target.value }))}
                 min="2020"
                 max="2099"
-                className="input-field w-full"
+                className="input w-full"
               />
             </div>
           </div>
@@ -243,7 +243,7 @@ function CreatePaymentModal({ onClose, onSave, employees = [] }) {
               step="0.01"
               value={form.amount_paid}
               onChange={(e) => setForm((p) => ({ ...p, amount_paid: e.target.value }))}
-              className="input-field w-full"
+              className="input w-full"
               placeholder="0.00"
             />
           </div>
@@ -253,7 +253,7 @@ function CreatePaymentModal({ onClose, onSave, employees = [] }) {
             <select
               value={form.payment_method}
               onChange={(e) => setForm((p) => ({ ...p, payment_method: e.target.value }))}
-              className="input-field w-full"
+              className="input w-full"
             >
               <option value="bank_transfer">Bank Transfer</option>
               <option value="upi">UPI</option>
@@ -267,7 +267,7 @@ function CreatePaymentModal({ onClose, onSave, employees = [] }) {
               value={form.notes}
               onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
               rows={2}
-              className="input-field w-full resize-none"
+              className="input w-full resize-none"
               placeholder="Optional notes..."
             />
           </div>
@@ -324,7 +324,7 @@ function MarkPaidModal({ payment, onClose, onSave }) {
               step="0.01"
               value={form.amount_paid}
               onChange={(e) => setForm((p) => ({ ...p, amount_paid: e.target.value }))}
-              className="input-field w-full"
+              className="input w-full"
             />
           </div>
 
@@ -333,7 +333,7 @@ function MarkPaidModal({ payment, onClose, onSave }) {
             <select
               value={form.payment_method}
               onChange={(e) => setForm((p) => ({ ...p, payment_method: e.target.value }))}
-              className="input-field w-full"
+              className="input w-full"
             >
               <option value="bank_transfer">Bank Transfer</option>
               <option value="upi">UPI</option>
@@ -347,7 +347,7 @@ function MarkPaidModal({ payment, onClose, onSave }) {
               type="date"
               value={form.payment_date}
               onChange={(e) => setForm((p) => ({ ...p, payment_date: e.target.value }))}
-              className="input-field w-full"
+              className="input w-full"
             />
           </div>
 
@@ -357,7 +357,7 @@ function MarkPaidModal({ payment, onClose, onSave }) {
               value={form.notes}
               onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
               rows={2}
-              className="input-field w-full resize-none"
+              className="input w-full resize-none"
               placeholder="Optional..."
             />
           </div>
@@ -552,7 +552,7 @@ export default function SalaryManagement() {
                 value={salarySearch}
                 onChange={(e) => setSalarySearch(e.target.value)}
                 placeholder="Search employees..."
-                className="input-field w-full pl-9"
+                className="input w-full pl-9"
               />
             </div>
 
@@ -561,7 +561,7 @@ export default function SalaryManagement() {
               <select
                 value={salaryDeptFilter}
                 onChange={(e) => setSalaryDeptFilter(e.target.value)}
-                className="input-field pr-8 appearance-none"
+                className="input pr-8 appearance-none"
               >
                 <option value="">All Departments</option>
                 {depts.map((d) => (
@@ -657,7 +657,7 @@ export default function SalaryManagement() {
             <select
               value={payMonth}
               onChange={(e) => setPayMonth(+e.target.value)}
-              className="input-field"
+              className="input"
             >
               {Array.from({ length: 12 }, (_, i) => (
                 <option key={i + 1} value={i + 1}>
@@ -673,7 +673,7 @@ export default function SalaryManagement() {
               onChange={(e) => setPayYear(+e.target.value)}
               min="2020"
               max="2099"
-              className="input-field w-24"
+              className="input w-24"
             />
 
             {/* Dept filter */}
@@ -681,7 +681,7 @@ export default function SalaryManagement() {
               <select
                 value={payDeptFilter}
                 onChange={(e) => setPayDeptFilter(e.target.value)}
-                className="input-field pr-8 appearance-none"
+                className="input pr-8 appearance-none"
               >
                 <option value="">All Depts</option>
                 {depts.map((d) => (
@@ -696,7 +696,7 @@ export default function SalaryManagement() {
               <select
                 value={payStatusFilter}
                 onChange={(e) => setPayStatusFilter(e.target.value)}
-                className="input-field pr-8 appearance-none"
+                className="input pr-8 appearance-none"
               >
                 <option value="">All Status</option>
                 <option value="pending">Pending</option>

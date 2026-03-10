@@ -151,7 +151,7 @@ export default function TimeTrackingPage() {
             </div>
             <div className="flex items-center gap-3">
               <input value={notes} onChange={e => setNotes(e.target.value)}
-                placeholder="Stop notes (optional)" className="input-field text-sm w-56" />
+                placeholder="Stop notes (optional)" className="input text-sm w-56" />
               <button onClick={handleStop} disabled={stopMutation.isPending}
                 className="flex items-center gap-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-xl px-4 py-2 text-sm font-medium transition-colors">
                 <Square className="w-4 h-4" />
@@ -179,7 +179,7 @@ export default function TimeTrackingPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input value={taskSearch} onChange={e => setTaskSearch(e.target.value)}
-                  placeholder="Task name or ID…" className="input-field pl-9 w-full" />
+                  placeholder="Task name or ID…" className="input pl-9 w-full" />
               </div>
             </div>
             <div className="space-y-2 max-h-72 overflow-y-auto">
@@ -225,13 +225,13 @@ export default function TimeTrackingPage() {
             <div>
               <label className="label">Date</label>
               <input type="date" value={dateFilter}
-                onChange={e => setDate(e.target.value)} className="input-field" />
+                onChange={e => setDate(e.target.value)} className="input" />
             </div>
             {isManager && (
               <div className="w-48">
                 <label className="label">Employee ID</label>
                 <input value={empFilter} onChange={e => setEmp(e.target.value)}
-                  placeholder="Filter by employee…" className="input-field" />
+                  placeholder="Filter by employee…" className="input" />
               </div>
             )}
           </div>

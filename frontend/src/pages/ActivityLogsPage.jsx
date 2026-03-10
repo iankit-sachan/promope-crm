@@ -117,12 +117,12 @@ export default function ActivityLogsPage() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
-              placeholder="Search descriptions…" className="input-field pl-9 w-full" />
+              placeholder="Search descriptions…" className="input pl-9 w-full" />
           </div>
         </div>
         <div>
           <label className="label">Event Type</label>
-          <select value={verbFilter} onChange={e => { setVerb(e.target.value); setPage(1) }} className="input-field w-48">
+          <select value={verbFilter} onChange={e => { setVerb(e.target.value); setPage(1) }} className="input w-48">
             <option value="">All Events</option>
             {ALL_VERBS.map(v => (
               <option key={v} value={v}>{v.replace(/_/g, ' ')}</option>
@@ -131,11 +131,11 @@ export default function ActivityLogsPage() {
         </div>
         <div>
           <label className="label">From</label>
-          <input type="date" value={dateFrom} onChange={e => { setFrom(e.target.value); setPage(1) }} className="input-field" />
+          <input type="date" value={dateFrom} onChange={e => { setFrom(e.target.value); setPage(1) }} className="input" />
         </div>
         <div>
           <label className="label">To</label>
-          <input type="date" value={dateTo} onChange={e => { setTo(e.target.value); setPage(1) }} className="input-field" />
+          <input type="date" value={dateTo} onChange={e => { setTo(e.target.value); setPage(1) }} className="input" />
         </div>
         <button onClick={resetFilters} className="btn-secondary text-sm">Clear</button>
       </div>
