@@ -66,7 +66,7 @@ class DailyReportListCreateView(generics.ListCreateAPIView):
         qs = DailyReport.objects.select_related(
             'employee', 'employee__department', 'reviewed_by'
         )
-        if not user.is_hr_or_above:
+        if not user.is_manager_or_above:
             try:
                 qs = qs.filter(employee=user.employee_profile)
             except Exception:
@@ -133,7 +133,7 @@ class AllReportsView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        if not user.is_hr_or_above:
+        if not user.is_manager_or_above:
             return DailyReport.objects.none()
 
         qs = DailyReport.objects.select_related(
@@ -184,7 +184,7 @@ class DailyReportDetailView(generics.RetrieveUpdateAPIView):
 
         # Read access: owner or HR/Founder
         is_owner = (obj.employee.user_id == user.id)
-        if not is_owner and not user.is_hr_or_above:
+        if not is_owner and not user.is_manager_or_above:
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied('You do not have permission to view this report.')
         return obj
@@ -259,7 +259,7 @@ def submit_report(request, pk):
 @permission_classes([IsAuthenticated])
 def review_report(request, pk):
     """PATCH /api/daily-reports/<pk>/review/  — HR/Founder marks report reviewed."""
-    if not request.user.is_hr_or_above:
+    if not request.user.is_manager_or_above:
         return Response({'detail': 'Only HR or Founders can review reports.'},
                         status=status.HTTP_403_FORBIDDEN)
 
@@ -302,7 +302,7 @@ def review_report(request, pk):
 @permission_classes([IsAuthenticated])
 def daily_report_analytics(request):
     """GET /api/daily-reports/analytics/  — dashboard stats for HR/Founder."""
-    if not request.user.is_hr_or_above:
+    if not request.user.is_manager_or_above:
         return Response({'detail': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
 
     today = timezone.now().date()
