@@ -26,7 +26,8 @@ class DailyReportListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'employee', 'employee_name', 'employee_id_code', 'department_name',
             'report_date', 'tasks_assigned', 'tasks_completed', 'tasks_pending',
-            'hours_worked', 'status', 'reviewed_by_name', 'review_note', 'reviewed_at',
+            'hours_worked', 'work_description', 'blockers',
+            'status', 'reviewed_by_name', 'review_note', 'reviewed_at',
             'attachment_url', 'is_editable', 'created_at', 'updated_at',
         ]
 
@@ -112,9 +113,10 @@ class DailyReportUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = DailyReport
         fields = [
-            'tasks_assigned', 'tasks_completed', 'tasks_pending',
+            'id', 'tasks_assigned', 'tasks_completed', 'tasks_pending',
             'hours_worked', 'work_description', 'blockers', 'attachment',
         ]
+        read_only_fields = ['id']
 
     def validate_hours_worked(self, value):
         if value < 0 or value > 24:

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { dailyReportService } from '../../services/api'
 import { formatDate } from '../../utils/helpers'
@@ -72,9 +72,8 @@ export default function MyReports() {
             </thead>
             <tbody>
               {reports.map((report) => (
-                <>
+                <Fragment key={report.id}>
                   <tr
-                    key={report.id}
                     className="border-t border-slate-700/50 hover:bg-slate-700/20 cursor-pointer"
                     onClick={() => setExpanded(expanded === report.id ? null : report.id)}
                   >
@@ -105,7 +104,7 @@ export default function MyReports() {
                     </td>
                   </tr>
                   {expanded === report.id && (
-                    <tr key={`${report.id}-detail`} className="border-t border-slate-700/30 bg-slate-800/30">
+                    <tr className="border-t border-slate-700/30 bg-slate-800/30">
                       <td colSpan={7} className="px-6 py-4 space-y-3">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <DetailBlock label="Tasks Assigned" text={report.tasks_assigned} />
@@ -125,7 +124,7 @@ export default function MyReports() {
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>
