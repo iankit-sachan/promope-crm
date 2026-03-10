@@ -6,7 +6,7 @@ import {
   HeartHandshake, Users2, CalendarOff, FileText, Briefcase, BarChart2,
   Wallet, BadgeDollarSign, CreditCard, FileDown,
   Activity, BookOpen, ScrollText, Timer,
-  Target, UserSearch, Kanban, ClipboardList, Monitor,
+  Target, UserSearch, Kanban, ClipboardList, Monitor, X,
 } from 'lucide-react'
 import { useChatStore } from '../../store/chatStore'
 import { useAuthStore } from '../../store/authStore'
@@ -87,15 +87,15 @@ export default function Sidebar({ isOpen, onClose }) {
 
   return (
     <aside className={clsx(
-      'w-60 flex-shrink-0 bg-slate-800/50 border-r border-slate-700 flex flex-col',
-      // Mobile: fixed drawer that slides in/out
-      'fixed inset-y-0 left-0 z-40 transition-transform duration-200 ease-in-out',
-      // Desktop: relative positioning, always visible
-      'md:relative md:translate-x-0',
+      'w-60 flex-shrink-0 bg-slate-800 border-r border-slate-700 flex flex-col',
+      // Mobile: fixed drawer below the TopBar (top-16 = 64px), slides in/out
+      'fixed top-16 left-0 bottom-0 z-40 transition-transform duration-200 ease-in-out',
+      // Desktop: static (part of flex layout), reset all fixed-position overrides
+      'md:static md:top-auto md:bottom-auto md:inset-auto md:z-auto md:translate-x-0',
       isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
     )}>
-      {/* Logo */}
-      <div className="h-16 flex items-center gap-3 px-5 border-b border-slate-700">
+      {/* Logo — desktop only (TopBar already shows branding on mobile) */}
+      <div className="hidden md:flex h-16 items-center gap-3 px-5 border-b border-slate-700">
         <img src="/logo.png.jpeg" alt="PromoPe" className="h-9 w-auto rounded-full" />
         <p className="font-semibold text-white text-sm">PromoPe</p>
       </div>

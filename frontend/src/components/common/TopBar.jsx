@@ -7,7 +7,7 @@ import { timeAgo } from '../../utils/helpers'
 import { useAuthStore } from '../../store/authStore'
 import clsx from 'clsx'
 
-export default function TopBar({ onToggleSidebar }) {
+export default function TopBar({ onToggleSidebar, sidebarOpen }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [showNotifications, setShowNotifications] = useState(false)
   const notifRef = useRef(null)
@@ -61,13 +61,13 @@ export default function TopBar({ onToggleSidebar }) {
 
   return (
     <header className="h-16 bg-slate-800/50 border-b border-slate-700 flex items-center px-4 md:px-6 gap-3 flex-shrink-0">
-      {/* Hamburger — mobile only */}
+      {/* Hamburger / Close — mobile only */}
       <button
         onClick={onToggleSidebar}
         className="md:hidden p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors flex-shrink-0"
         aria-label="Toggle menu"
       >
-        <Menu className="w-5 h-5" />
+        {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </button>
 
       {/* Search */}

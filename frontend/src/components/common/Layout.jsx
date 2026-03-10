@@ -15,11 +15,14 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen bg-slate-900 overflow-hidden">
-      {/* Mobile backdrop — closes sidebar when tapped */}
+      {/* Mobile backdrop — covers content area only (below TopBar), closes sidebar on tap */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          className="fixed top-16 inset-x-0 bottom-0 bg-black/50 z-30 md:hidden cursor-pointer"
           onClick={() => setSidebarOpen(false)}
+          onTouchEnd={(e) => { e.preventDefault(); setSidebarOpen(false) }}
+          aria-label="Close menu"
+          role="button"
         />
       )}
 
@@ -27,7 +30,7 @@ export default function Layout() {
 
       {/* Main content area */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <TopBar onToggleSidebar={() => setSidebarOpen(o => !o)} />
+        <TopBar sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen(o => !o)} />
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <Outlet />
         </main>
