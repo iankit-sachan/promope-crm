@@ -31,7 +31,7 @@ function BankDetailsModal({ onClose, onSave, initial = null, employees = [] }) {
         type={opts.type || 'text'}
         value={form[key]}
         onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
-        className="input-field w-full"
+        className="input w-full"
         placeholder={opts.placeholder || ''}
         required={opts.required}
         maxLength={opts.maxLength}
@@ -60,7 +60,7 @@ function BankDetailsModal({ onClose, onSave, initial = null, employees = [] }) {
               <select
                 value={form.employee}
                 onChange={(e) => setForm((p) => ({ ...p, employee: e.target.value }))}
-                className="input-field w-full"
+                className="input w-full"
               >
                 <option value="">Select employee</option>
                 {employees.map((e) => (
@@ -90,7 +90,7 @@ function BankDetailsModal({ onClose, onSave, initial = null, employees = [] }) {
                 type={showAcct ? 'text' : 'password'}
                 value={form.account_number}
                 onChange={(e) => setForm((p) => ({ ...p, account_number: e.target.value }))}
-                className="input-field w-full pr-10"
+                className="input w-full pr-10"
                 placeholder={isEdit ? 'Leave blank to keep existing' : 'Enter account number'}
                 maxLength={30}
               />
@@ -118,7 +118,7 @@ function BankDetailsModal({ onClose, onSave, initial = null, employees = [] }) {
                 type={showPan ? 'text' : 'password'}
                 value={form.pan_number}
                 onChange={(e) => setForm((p) => ({ ...p, pan_number: e.target.value.toUpperCase() }))}
-                className="input-field w-full pr-10"
+                className="input w-full pr-10"
                 placeholder={isEdit ? 'Leave blank to keep existing' : 'e.g. ABCDE1234F'}
                 maxLength={10}
               />
@@ -278,7 +278,7 @@ export default function EmployeeBankDetailsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search employees..."
-            className="input-field w-full pl-9"
+            className="input w-full pl-9"
           />
         </div>
 
@@ -287,7 +287,7 @@ export default function EmployeeBankDetailsPage() {
           <select
             value={deptFilter}
             onChange={(e) => setDeptFilter(e.target.value)}
-            className="input-field pr-8 appearance-none"
+            className="input pr-8 appearance-none"
           >
             <option value="">All Departments</option>
             {depts.map((d) => (
