@@ -38,7 +38,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-slate-900 flex items-start sm:items-center justify-center p-4 py-8 overflow-y-auto">
       {/* Background grid */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-30" />
 
@@ -66,7 +66,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="founder@company.com"
-                  className="input pl-9"
+                  className="input pl-9 !text-base"
                   autoComplete="email"
                   required
                 />
@@ -83,7 +83,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="input pl-9 pr-9"
+                  className="input pl-9 pr-9 !text-base"
                   autoComplete="current-password"
                   required
                 />

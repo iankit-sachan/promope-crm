@@ -1209,7 +1209,11 @@ export default function ChatPage() {
     <div className="flex overflow-hidden -m-6" style={{ height: 'calc(100vh - 64px)' }}>
 
       {/* ── Left sidebar ──────────────────────────────────────────────────── */}
-      <div className="w-80 shrink-0 flex flex-col border-r border-slate-700 bg-slate-800/40">
+      <div className={clsx(
+        'shrink-0 flex flex-col border-r border-slate-700 bg-slate-800/40',
+        'w-full md:w-80',
+        activeRoom ? 'hidden md:flex' : 'flex',
+      )}>
 
         {/* Header */}
         <div className="h-14 flex items-center justify-between px-4 border-b border-slate-700">
@@ -1353,7 +1357,19 @@ export default function ChatPage() {
       </div>
 
       {/* ── Right panel ───────────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0 bg-slate-900">
+      <div className={clsx(
+        'flex-1 flex-col min-w-0 bg-slate-900',
+        activeRoom ? 'flex' : 'hidden md:flex',
+      )}>
+        {/* Mobile back button */}
+        {activeRoom && (
+          <button
+            onClick={() => setActiveRoom(null)}
+            className="md:hidden flex items-center gap-2 px-4 py-2 text-sm text-slate-400 hover:text-white border-b border-slate-700 bg-slate-800/60"
+          >
+            ← Back to Messages
+          </button>
+        )}
         {activeRoom ? (
           activeRoom.type === 'reports' ? (
             <ReportsPanel isManager={isManager} />
