@@ -1206,7 +1206,7 @@ export default function ChatPage() {
   }, [activeRoom, conversations, groups])
 
   return (
-    <div className="flex overflow-hidden -m-6" style={{ height: 'calc(100vh - 64px)' }}>
+    <div className="flex overflow-hidden -m-4 md:-m-6" style={{ height: 'calc(100vh - 64px)' }}>
 
       {/* ── Left sidebar ──────────────────────────────────────────────────── */}
       <div className={clsx(
