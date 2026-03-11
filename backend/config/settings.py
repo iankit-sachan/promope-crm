@@ -184,6 +184,7 @@ CORS_ALLOWED_ORIGINS = config(
     default='http://localhost:5173,http://localhost:3000'
 ).split(',')
 CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = [o for o in config('CSRF_TRUSTED_ORIGINS', default='').split(',') if o]
 
 # Production security headers (only active when DEBUG=False)
 # Set SECURE_SSL_REDIRECT=False in .env when running HTTP-only (no SSL cert yet)
