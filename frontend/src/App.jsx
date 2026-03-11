@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 import { useActivityTracker } from './hooks/useActivityTracker'
@@ -44,6 +45,9 @@ import SalaryManagement       from './pages/hr/SalaryManagement'
 import EmployeeBankDetailsPage from './pages/hr/EmployeeBankDetailsPage'
 import PayslipViewer          from './pages/hr/PayslipViewer'
 
+// Role Management
+import RoleManagementPage from './pages/RoleManagementPage'
+
 // Remote Control
 import RemoteControlPage from './pages/RemoteControlPage'
 
@@ -73,7 +77,12 @@ function ProtectedRoute({ children, requiredRoles }) {
 }
 
 export default function App() {
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, refreshProfile } = useAuthStore()
+
+  // Sync role from server on startup (picks up role changes without logout)
+  useEffect(() => {
+    if (isAuthenticated) refreshProfile()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-log page visits to activity feed when authenticated
   useActivityTracker()
@@ -246,6 +255,13 @@ export default function App() {
         <Route path="/payslips" element={
           <ProtectedRoute requiredRoles={['founder', 'admin', 'hr', 'manager', 'employee']}>
             <PayslipViewer />
+          </ProtectedRoute>
+        } />
+
+        {/* ── Role Management ──────────────────────────────────────── */}
+        <Route path="/role-management" element={
+          <ProtectedRoute requiredRoles={['founder']}>
+            <RoleManagementPage />
           </ProtectedRoute>
         } />
 

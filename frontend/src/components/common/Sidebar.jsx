@@ -6,7 +6,7 @@ import {
   HeartHandshake, Users2, CalendarOff, FileText, Briefcase, BarChart2,
   Wallet, BadgeDollarSign, CreditCard, FileDown,
   Activity, BookOpen, ScrollText, Timer,
-  Target, UserSearch, Kanban, ClipboardList, Monitor, X,
+  Target, UserSearch, Kanban, ClipboardList, Monitor, X, ShieldCheck,
 } from 'lucide-react'
 import { useChatStore } from '../../store/chatStore'
 import { useAuthStore } from '../../store/authStore'
@@ -17,13 +17,14 @@ import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
 const navItems = [
-  { to: '/dashboard',      label: 'Dashboard',     icon: LayoutDashboard, roles: ['founder','admin','manager','employee'] },
+  { to: '/dashboard',      label: 'Dashboard',     icon: LayoutDashboard, roles: ['founder','admin','manager','hr','employee'] },
   { to: '/employees',      label: 'Employees',     icon: Users,           roles: ['founder','admin','manager'] },
-  { to: '/tasks',          label: 'Tasks',          icon: CheckSquare,     roles: ['founder','admin','manager','employee'] },
-  { to: '/worklogs',       label: 'Work Log',       icon: ClipboardCheck,  roles: ['founder','admin','manager','employee'] },
-  { to: '/chat',           label: 'Messages',       icon: MessageSquare,   roles: ['founder','admin','manager','employee'] },
+  { to: '/role-management', label: 'Role Management', icon: ShieldCheck,   roles: ['founder'] },
+  { to: '/tasks',          label: 'Tasks',          icon: CheckSquare,     roles: ['founder','admin','manager','hr','employee'] },
+  { to: '/worklogs',       label: 'Work Log',       icon: ClipboardCheck,  roles: ['founder','admin','manager','hr','employee'] },
+  { to: '/chat',           label: 'Messages',       icon: MessageSquare,   roles: ['founder','admin','manager','hr','employee'] },
   { to: '/attendance',     label: 'Attendance',     icon: CalendarDays,    roles: ['founder','admin','manager'] },
-  { to: '/my-attendance',  label: 'My Attendance',  icon: UserCheck,       roles: ['founder','admin','manager','employee'] },
+  { to: '/my-attendance',  label: 'My Attendance',  icon: UserCheck,       roles: ['founder','admin','manager','hr','employee'] },
   { to: '/departments',    label: 'Departments',    icon: Building2,       roles: ['founder','admin','manager'] },
   { to: '/analytics',      label: 'Analytics',      icon: BarChart3,       roles: ['founder','admin','manager'] },
   { to: '/manager',        label: 'Mgr Dashboard',  icon: MonitorDot,      roles: ['founder','admin','manager'] },
@@ -57,7 +58,7 @@ const navItems = [
   { to: '/activity-logs',    label: 'Activity Logs',    icon: ScrollText,   roles: ['founder','admin','manager','hr','employee'] },
   { to: '/time-tracking',    label: 'Time Tracking',    icon: Timer,        roles: ['founder','admin','manager','hr','employee'] },
 
-  { to: '/settings',       label: 'Settings',        icon: Settings,         roles: ['founder','admin','manager','employee'] },
+  { to: '/settings',       label: 'Settings',        icon: Settings,         roles: ['founder','admin','manager','hr','employee'] },
 ]
 
 export default function Sidebar({ isOpen, onClose }) {

@@ -46,6 +46,14 @@ export const useAuthStore = create(
         }))
       },
 
+      refreshProfile: async () => {
+        try {
+          const { authService } = await import('../services/api')
+          const { data } = await authService.profile()
+          set((state) => ({ user: { ...state.user, ...data } }))
+        } catch {}
+      },
+
       updateTokens: (access, refresh) => {
         set({ accessToken: access, refreshToken: refresh })
       },

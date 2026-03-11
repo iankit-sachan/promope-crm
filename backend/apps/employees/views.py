@@ -14,7 +14,7 @@ from .models import Employee
 from .serializers import (
     EmployeeListSerializer, EmployeeDetailSerializer, EmployeeCreateSerializer
 )
-from apps.authentication.permissions import IsAdminOrAbove, IsManagerOrAbove
+from apps.authentication.permissions import IsAdminOrAbove, IsManagerOrAbove, IsFounder
 from apps.activity.utils import log_activity
 from apps.activity.models import ActivityLog
 from apps.activity.serializers import ActivityLogSerializer
@@ -151,3 +151,85 @@ def active_employees_view(request):
     ).select_related('user', 'department')
     serializer = EmployeeListSerializer(employees, many=True)
     return Response({'count': employees.count(), 'results': serializer.data})
+
+
+# ── Role Management ──────────────────────────────────────────────────────────
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsFounder])
+def role_management_list(request):
+    """
+    GET /api/employees/role-management/
+    Returns all employees and HR users (excludes founder/admin/manager).
+    Only accessible by Founder.
+    """
+    from django.shortcuts import get_list_or_404
+    employees = Employee.objects.filter(
+        user__role__in=['employee', 'hr']
+    ).select_related('user', 'department').order_by('full_name')
+
+    data = []
+    for emp in employees:
+        data.append({
+            'id': emp.id,
+            'employee_id': emp.employee_id,
+            'full_name': emp.full_name,
+            'email': emp.email,
+            'department': emp.department.name if emp.department else None,
+            'role': emp.user.role,
+        })
+    return Response(data)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated, IsFounder])
+def assign_hr(request, pk):
+    """
+    PATCH /api/employees/{pk}/assign-hr/
+    Promotes an employee to the HR role. Only Founder can call this.
+    """
+    from django.shortcuts import get_object_or_404
+    employee = get_object_or_404(Employee, pk=pk)
+    if employee.user.role != 'employee':
+        return Response(
+            {'error': 'Only employees can be assigned the HR role.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    employee.user.role = 'hr'
+    employee.user.save(update_fields=['role'])
+    log_activity(
+        actor=request.user,
+        verb='role_change',
+        description=f'{request.user.full_name} assigned HR role to {employee.full_name}',
+        target_type='employee',
+        target_id=employee.id,
+        target_name=employee.full_name,
+    )
+    return Response({'message': f'{employee.full_name} is now an HR.', 'role': 'hr'})
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated, IsFounder])
+def remove_hr(request, pk):
+    """
+    PATCH /api/employees/{pk}/remove-hr/
+    Demotes an HR user back to Employee. Only Founder can call this.
+    """
+    from django.shortcuts import get_object_or_404
+    employee = get_object_or_404(Employee, pk=pk)
+    if employee.user.role != 'hr':
+        return Response(
+            {'error': 'User does not have the HR role.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    employee.user.role = 'employee'
+    employee.user.save(update_fields=['role'])
+    log_activity(
+        actor=request.user,
+        verb='role_change',
+        description=f'{request.user.full_name} removed HR role from {employee.full_name}',
+        target_type='employee',
+        target_id=employee.id,
+        target_name=employee.full_name,
+    )
+    return Response({'message': f'{employee.full_name} is now an Employee.', 'role': 'employee'})

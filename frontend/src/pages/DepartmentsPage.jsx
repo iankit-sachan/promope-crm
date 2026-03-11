@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Building2, Plus, Users, CheckSquare, TrendingUp } from 'lucide-react'
+import { Building2, Plus, Users, CheckSquare, TrendingUp, Trash2 } from 'lucide-react'
 import { departmentService } from '../services/api'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import toast from 'react-hot-toast'
@@ -10,6 +10,17 @@ export default function DepartmentsPage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const [showModal, setShowModal] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(null) // { id, name }
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => departmentService.delete(id),
+    onSuccess: () => {
+      toast.success('Department deleted')
+      setConfirmDelete(null)
+      qc.invalidateQueries({ queryKey: ['departments'] })
+    },
+    onError: () => toast.error('Failed to delete department'),
+  })
 
   const { data, isLoading } = useQuery({
     queryKey: ['departments'],
@@ -54,11 +65,20 @@ export default function DepartmentsPage() {
                     <p className="text-slate-400 text-sm mt-0.5 line-clamp-2">{dept.description}</p>
                   )}
                 </div>
-                <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: `${dept.color}20` }}
-                >
-                  <Building2 className="w-5 h-5" style={{ color: dept.color }} />
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setConfirmDelete({ id: dept.id, name: dept.name }) }}
+                    className="p-1.5 hover:bg-red-500/15 rounded-lg transition-colors text-slate-500 hover:text-red-400"
+                    title="Delete department"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                  <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: `${dept.color}20` }}
+                  >
+                    <Building2 className="w-5 h-5" style={{ color: dept.color }} />
+                  </div>
                 </div>
               </div>
 
@@ -95,6 +115,29 @@ export default function DepartmentsPage() {
           onClose={() => setShowModal(false)}
           onSuccess={() => { setShowModal(false); qc.invalidateQueries({ queryKey: ['departments'] }) }}
         />
+      )}
+
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-sm p-6 fade-in">
+            <h2 className="text-lg font-semibold text-white mb-2">Delete Department</h2>
+            <p className="text-slate-400 text-sm mb-6">
+              Are you sure you want to delete <span className="text-white font-medium">"{confirmDelete.name}"</span>? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmDelete(null)} className="btn-secondary flex-1 justify-center">
+                Cancel
+              </button>
+              <button
+                onClick={() => deleteMutation.mutate(confirmDelete.id)}
+                disabled={deleteMutation.isPending}
+                className="btn flex-1 justify-center bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25 disabled:opacity-50"
+              >
+                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

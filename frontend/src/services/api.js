@@ -116,6 +116,12 @@ export const employeeService = {
   activeToday: () => api.get('/employees/active-today/'),
 }
 
+export const roleService = {
+  list:     ()   => api.get('/employees/role-management/'),
+  assignHR: (id) => api.patch(`/employees/${id}/assign-hr/`),
+  removeHR: (id) => api.patch(`/employees/${id}/remove-hr/`),
+}
+
 export const taskService = {
   list: (params) => api.get('/tasks/', { params }),
   get: (id) => api.get(`/tasks/${id}/`),
