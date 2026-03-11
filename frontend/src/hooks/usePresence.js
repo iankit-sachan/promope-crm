@@ -20,7 +20,8 @@ import { useEffect, useRef, useCallback } from 'react'
 import { useAuthStore }    from '../store/authStore'
 import { usePresenceStore } from '../store/presenceStore'
 
-const WS_BASE         = import.meta.env.VITE_WS_URL || `ws://${window.location.host}`
+const WS_BASE         = import.meta.env.VITE_WS_URL ||
+  `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`
 const HEARTBEAT_MS    = 30_000       // 30 s
 const AWAY_TIMEOUT_MS = 5 * 60_000  // 5 min  → away
 const IDLE_TIMEOUT_MS = 15 * 60_000 // 15 min → idle (10 min after away)

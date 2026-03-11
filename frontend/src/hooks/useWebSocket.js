@@ -8,7 +8,8 @@ import { useEffect, useRef, useCallback } from 'react'
 import { useAuthStore } from '../store/authStore'
 import { useActivityStore } from '../store/activityStore'
 
-const WS_BASE = import.meta.env.VITE_WS_URL || `ws://${window.location.host}`
+const WS_BASE = import.meta.env.VITE_WS_URL ||
+  `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`
 
 /** Roles permitted to watch the global activity feed. */
 const ACTIVITY_FEED_ROLES = ['founder', 'admin', 'hr']
