@@ -26,6 +26,9 @@ A full-stack **Staff Management CRM** built with **React 18 + Django 4.2** featu
    - [Analytics Engine](#13-analytics-engine)
    - [Task Management System](#14-task-management-system)
    - [Department Management](#15-department-management)
+   - [Daily Reports](#16-daily-reports)
+   - [HR Module](#17-hr-module)
+   - [Time Tracking](#18-time-tracking)
 5. [API Reference](#api-reference)
 6. [WebSocket Events](#websocket-events)
 7. [Role Permissions Matrix](#role-permissions-matrix)
@@ -33,6 +36,9 @@ A full-stack **Staff Management CRM** built with **React 18 + Django 4.2** featu
 9. [Quick Start](#quick-start)
 10. [Environment Variables](#environment-variables)
 11. [Development Notes](#development-notes)
+12. [Testing](#testing)
+13. [Deployment](#deployment)
+14. [Android Mobile App](#android-mobile-app)
 
 ---
 
@@ -146,11 +152,30 @@ CRM/
 │   │   │   ├── views.py         # conversation & group REST endpoints
 │   │   │   └── consumers.py     # ChatConsumer ws/chat/<type>/<id>/
 │   │   │
-│   │   └── worklogs/
-│   │       ├── models.py        # WorkLog (daily employee submission)
-│   │       └── views.py         # submit, approve, list
+│   │   ├── worklogs/
+│   │       │   ├── models.py        # WorkLog (daily employee submission)
+│   │       │   └── views.py         # submit, approve, list
 │   │
-│   ├── manage.py
+│   ├── daily_reports/
+│   │   ├── models.py        # DailyReport (draft→submitted→reviewed)
+│   │   ├── views.py         # list, my-reports, all, analytics, submit, review
+│   │   └── serializers.py   # DailyReportSerializer with analytics
+│   │
+│   ├── hr/
+│   │   ├── models.py        # Leave, HRDocument, Salary, BankDetails,
+│   │   │                    # Payslip, JobPosition, Candidate, HRTask
+│   │   └── views.py         # dashboard, leaves, payroll, recruitment, hiring
+│   │
+│   ├── tracking/
+│   │   ├── models.py        # DailyReport (tracking), TaskTimer
+│   │   └── views.py         # reports, timers, productivity dashboard
+│   │
+│   └── remote_control/
+│       └── views.py         # Remote agent control API
+│
+├── manage.py
+├── test_integration.py      # Integration test suite (8 test groups)
+└── requirements.txt
 │   └── requirements.txt
 │
 └── frontend/
@@ -183,6 +208,13 @@ CRM/
     │   │   ├── WorkLogPage.jsx        # Daily work log submission
     │   │   ├── ChatPage.jsx           # Messaging: Direct + Groups + Reports
     │   │   ├── ManagerDashboardPage.jsx # Daily team productivity view
+    │   │   ├── DailyReportPage.jsx    # Employee daily report submission + review
+    │   │   ├── ActivityLogsPage.jsx   # Full activity log browser (manager+)
+    │   │   ├── ActivityMonitorDashboard.jsx # Live activity monitor
+    │   │   ├── AddEmployeePage.jsx    # Add new employee form
+    │   │   ├── RoleManagementPage.jsx # Role assignment and management
+    │   │   ├── TimeTrackingPage.jsx   # Task timer + productivity tracking
+    │   │   ├── RemoteControlPage.jsx  # Remote agent control panel
     │   │   ├── ReportsPage.jsx        # Work log reports (daily/weekly/monthly)
     │   │   └── SettingsPage.jsx       # Profile + password settings
     │   │
@@ -206,6 +238,22 @@ CRM/
     │
     ├── vite.config.js             # Vite proxy: /api → :8000, /ws → :8000
     └── tailwind.config.js         # Dark slate theme tokens
+```
+
+**Additional project folders:**
+
+```
+deploy/
+├── promope-crm.service            # systemd unit file
+├── nginx.conf                     # Nginx reverse proxy config
+└── run_deploy.sh                  # One-command EC2 full deployment script
+
+android-wrapper-app/               # Native Android APK (WebView wrapper)
+└── app/src/main/kotlin/com/promope/app/
+    ├── MainActivity.kt            # WebView + JWT injection + deep-link
+    ├── ChatBridge.kt              # JS<->Native bridge (window.Android.*)
+    ├── NotificationHelper.kt      # Notification channels + badge
+    └── ChatNotificationService.kt # ForegroundService, 30s REST poll
 ```
 
 ---
@@ -859,6 +907,69 @@ class Department(models.Model):
 
 ---
 
+### 16. Daily Reports
+
+Employees submit structured end-of-day reports tracked through a lifecycle: **draft → submitted → reviewed**.
+
+**Key fields:** `report_date`, `tasks_assigned`, `tasks_completed`, `hours_worked`, `status`, `review_notes`
+
+**Workflow:**
+```
+POST /api/daily-reports/                  create draft
+POST /api/daily-reports/{id}/submit/      submit (notifies HR + Founder, logs ActivityLog)
+POST /api/daily-reports/{id}/review/      manager reviews + adds notes
+```
+
+**Analytics** (`GET /api/daily-reports/analytics/`): `submitted_today`, `not_submitted_today`, `total_hours_today`, `hours_per_day` (14-day), `avg_hours`
+
+---
+
+### 17. HR Module
+
+Full HR management suite for HR role and above, covering the complete employee lifecycle.
+
+| Sub-module | Base Path | Description |
+|------------|-----------|-------------|
+| Dashboard | `/api/hr/dashboard/` | HR KPI summary |
+| Leave Management | `/api/hr/leave/` | Apply, approve, reject leave |
+| Leave Balances | `/api/hr/leave/balances/` | Per-employee entitlement |
+| Documents | `/api/hr/documents/` | HR document store |
+| Attendance (HR) | `/api/hr/attendance/` | Full team view + CSV export |
+| Payroll | `/api/hr/payroll/` | Payroll dashboard |
+| Salaries | `/api/hr/salaries/` | Salary structures |
+| Payslips | `/api/hr/payslips/` | Generate + download PDF payslips |
+| Hiring Pipeline | `/api/hr/hiring/pipeline/` | Kanban hiring board |
+| Jobs | `/api/hr/jobs/` | Job position postings |
+| Candidates | `/api/hr/candidates/` | Candidate tracking + stage updates |
+| Interviews | `/api/hr/interviews/` | Interview scheduling |
+| Evaluations | `/api/hr/evaluations/` | Candidate evaluation forms |
+| HR Tasks | `/api/hr/tasks/` | HR-specific task assignments |
+
+**Candidate → Employee:** `POST /api/hr/candidates/{id}/convert/` auto-creates User + Employee records.
+
+---
+
+### 18. Time Tracking
+
+Task-level timer tracking and daily productivity monitoring.
+
+| Model | Purpose |
+|-------|---------|
+| `DailyReport` | Manager-visible daily work summary per employee |
+| `TaskTimer` | Start/stop timer attached to a specific task |
+
+**Timer lifecycle:**
+```
+POST /api/tracking/timers/               start timer
+POST /api/tracking/timers/{id}/stop/     stop (auto-calculates duration)
+GET  /api/tracking/timers/summary/       total time per task/employee
+GET  /api/tracking/productivity/         manager productivity dashboard
+GET  /api/tracking/online-users/         currently active users
+```
+
+---
+
+
 ## API Reference
 
 ### Authentication
@@ -947,6 +1058,52 @@ class Department(models.Model):
 | GET    | `/api/chat/reports/admin/`                     | Manager+ | All reports (approve/reject view) |
 | GET    | `/api/chat/reports/{id}/`                      | All   | Report detail                        |
 | PATCH  | `/api/chat/reports/{id}/`                      | Manager+ | Approve or reject report          |
+
+### Daily Reports
+| Method | Endpoint | Roles | Description |
+|--------|----------|-------|-------------|
+| GET | `/api/daily-reports/` | All | My reports (employee) or all (manager+) |
+| POST | `/api/daily-reports/` | All | Create report draft |
+| GET | `/api/daily-reports/my-reports/` | All | Own report history |
+| GET | `/api/daily-reports/all/` | Manager+ | All reports with date range filter |
+| GET | `/api/daily-reports/analytics/` | HR+ | Submission stats + hours data |
+| GET | `/api/daily-reports/{id}/` | All (own) | Report detail |
+| POST | `/api/daily-reports/{id}/submit/` | Employee | Submit draft (triggers notification) |
+| POST | `/api/daily-reports/{id}/review/` | Manager+ | Review + add notes |
+
+### HR
+| Method | Endpoint | Roles | Description |
+|--------|----------|-------|-------------|
+| GET | `/api/hr/dashboard/` | HR+ | HR KPI summary |
+| GET/POST | `/api/hr/leave/` | HR+/All | All leave requests / submit leave |
+| GET | `/api/hr/leave/balances/` | HR+ | Per-employee leave balances |
+| POST | `/api/hr/leave/{id}/approve/` | HR+ | Approve leave |
+| POST | `/api/hr/leave/{id}/reject/` | HR+ | Reject leave |
+| GET | `/api/hr/attendance/` | HR+ | Full team attendance |
+| GET | `/api/hr/attendance/export/` | HR+ | Export attendance CSV |
+| GET | `/api/hr/payroll/` | HR+ | Payroll dashboard |
+| GET/POST | `/api/hr/salaries/` | HR+ | Salary structures |
+| POST | `/api/hr/payslips/generate/` | HR+ | Generate payslip |
+| GET | `/api/hr/payslips/{id}/download/` | HR+ | Download payslip PDF |
+| GET | `/api/hr/hiring/pipeline/` | HR+ | Hiring pipeline kanban view |
+| GET/POST | `/api/hr/candidates/` | HR+ | Candidates list / add |
+| POST | `/api/hr/candidates/{id}/stage/` | HR+ | Update candidate stage |
+| POST | `/api/hr/candidates/{id}/convert/` | HR+ | Convert to employee |
+| GET/POST | `/api/hr/interviews/` | HR+ | Interview list / schedule |
+| GET/POST | `/api/hr/jobs/` | HR+ | Job positions |
+
+### Tracking
+| Method | Endpoint | Roles | Description |
+|--------|----------|-------|-------------|
+| GET/POST | `/api/tracking/reports/` | All | Work reports / submit |
+| GET | `/api/tracking/reports/summary/` | Manager+ | Report summary stats |
+| POST | `/api/tracking/reports/{id}/review/` | Manager+ | Review work report |
+| GET/POST | `/api/tracking/timers/` | All | Timer list / start timer |
+| POST | `/api/tracking/timers/{id}/stop/` | All | Stop timer |
+| GET | `/api/tracking/timers/summary/` | All | Time summary per task |
+| GET | `/api/tracking/productivity/` | Manager+ | Productivity dashboard |
+| GET | `/api/tracking/online-users/` | Manager+ | Currently active users |
+
 
 ### Notifications
 | Method | Endpoint                          | Description              |
@@ -1262,3 +1419,158 @@ except Exception:
 ```
 
 This ensures the API still works even when Redis is unavailable.
+
+---
+
+## Testing
+
+### Integration Tests
+
+The integration test suite (`backend/test_integration.py`) exercises the Daily Reports API end-to-end against the live Django app and database.
+
+**Test groups:**
+
+| ID | Test | What Is Checked |
+|----|------|-----------------|
+| INTEG-1 | Analytics match DB | `submitted_today` API value equals live DB count |
+| INTEG-1a | Hours is numeric | `total_hours_today` returns int/float |
+| INTEG-1b | Hours per day | At most 14 entries in rolling window |
+| INTEG-2 | Notification on submit | HR + Founder receive notification after submission |
+| INTEG-2a | Founder notified | Founder notification count increases |
+| INTEG-3 | ActivityLog on submit | `daily_report_submitted` log exists |
+| INTEG-3a | target_type correct | `target_type == "daily_report"` |
+| INTEG-4 | ActivityLog on review | `daily_report_reviewed` log exists |
+| INTEG-5 | my-reports count | API count matches DB count per employee |
+| INTEG-6 | submitted + not_submitted = total | Consistency check across analytics |
+| INTEG-7 | Date range filter | `/all/?date_from=&date_to=` returns correct results |
+| INTEG-7a | Results in range | All returned reports fall within requested dates |
+| INTEG-8 | Detail fields | `GET /daily-reports/{pk}/` returns all required fields |
+
+**How to run:**
+```bash
+cd backend
+# Ensure Django server is running on port 8000
+python test_integration.py
+# Output: [PASS] / [FAIL] per test, summary at end
+# Results saved to /tmp/integ_results.json
+```
+
+> **Note:** Tests create real DB records (reports, submissions). They use test employees and clean up within the run. Run against development DB only.
+
+---
+
+## Deployment
+
+### EC2 One-Command Deploy (`deploy/run_deploy.sh`)
+
+Automates full production setup on a fresh Ubuntu EC2 instance.
+
+```bash
+# On the EC2 server (after git clone)
+cd /home/ubuntu/promope-crm
+chmod +x deploy/run_deploy.sh
+./deploy/run_deploy.sh
+```
+
+**What the script does (7 steps):**
+
+| Step | Action |
+|------|--------|
+| 1 | Create Python virtualenv at `~/promope-crm/venv` |
+| 2 | `pip install -r backend/requirements.txt` |
+| 3 | Generate `backend/.env` with random `SECRET_KEY` (skips if exists) |
+| 4 | Run `python manage.py migrate --noinput` |
+| 5 | Run `python manage.py collectstatic --noinput` |
+| 6 | `npm install && npm run build` (React production build) |
+| 7 | Install systemd service + Nginx config, reload both |
+
+**Post-deploy health check** (printed automatically):
+```
+  Daphne  : RUNNING
+  Nginx   : RUNNING
+  Postgres: RUNNING
+  Redis   : RUNNING
+```
+
+**Deploy files:**
+
+| File | Purpose |
+|------|---------|
+| `deploy/promope-crm.service` | systemd unit — runs Daphne as a service |
+| `deploy/nginx.conf` | Nginx reverse proxy — proxies `/api/` and `/ws/` to Daphne, serves React `dist/` |
+| `deploy/run_deploy.sh` | Full setup automation script |
+
+**Manual redeploy (after code push):**
+```bash
+ssh -i CRM.pem ubuntu@<EC2-IP>
+cd /home/ubuntu/promope-crm
+git pull origin main
+source venv/bin/activate
+cd backend && python manage.py migrate --noinput
+cd ../frontend && npm run build
+sudo systemctl restart promope-crm
+```
+
+---
+
+## Android Mobile App
+
+The `android-wrapper-app/` directory contains a **native Kotlin Android APK** that wraps the PromoPe CRM website in a WebView shell — no React Native, no Expo.
+
+**Repo:** [iankit-sachan/promope-android](https://github.com/iankit-sachan/promope-android)
+
+### Architecture
+
+```
+Android APK
+  SplashActivity
+  MainActivity
+    └── WebView (loads https://team.promope.site)
+          └── ChatBridge (window.Android.*)
+  ChatNotificationService (ForegroundService)
+  NotificationHelper
+```
+
+### Native Chat Notifications
+
+Push notifications for new chat messages are handled entirely in the native layer — no changes to the React frontend required.
+
+**Flow:**
+```
+onPageFinished → inject JS → reads localStorage['crm-auth'].state.accessToken
+  → window.Android.setAuthToken(token)
+    → ChatBridge saves JWT to SharedPreferences
+      → starts ChatNotificationService
+
+ChatNotificationService
+  → every 30 seconds: GET /api/chat/conversations/ (Bearer JWT)
+  → unread_count grew? → postChatNotification(sender, preview)
+                       → updateBadge(totalUnread)
+
+Notification tap → PendingIntent → onNewIntent()
+  → webView.evaluateJavascript("window.location.href='/chat'")
+```
+
+### JS ↔ Native Bridge (`window.Android`)
+
+| Method | Called By | Action |
+|--------|-----------|--------|
+| `setAuthToken(token)` | JS injection on page load | Save JWT, start polling service |
+| `updateUnreadBadge(count)` | React chatStore | Update launcher icon badge |
+| `clearAuthToken()` | React logout | Remove JWT, stop service, clear badge |
+
+### Build
+
+```bash
+cd android-wrapper-app
+.\gradlew.bat assembleDebug
+# Output: app/build/outputs/apk/debug/app-PromoPe.apk (~5.5 MB)
+```
+
+### Install via ADB
+
+```bash
+adb install -r app/build/outputs/apk/debug/app-PromoPe.apk
+```
+
+For full documentation see [`android-wrapper-app/README.md`](android-wrapper-app/README.md).
