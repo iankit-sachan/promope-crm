@@ -118,7 +118,7 @@ export default function App() {
 
         <Route path="/tasks" element={<TasksPage />} />
         <Route path="/tasks/add" element={
-          <ProtectedRoute requiredRoles={['founder', 'admin', 'manager']}>
+          <ProtectedRoute requiredRoles={['founder', 'admin', 'manager', 'hr']}>
             <AddTaskPage />
           </ProtectedRoute>
         } />
