@@ -20,6 +20,7 @@ A full-stack **Staff Management CRM** built with **React 18 + Django 4.2** featu
    - [Role-Aware Dashboard Rendering](#8-role-aware-dashboard-rendering)
    - [Attendance & Time Tracking](#9-attendance--time-tracking)
    - [Chat System](#10-chat-system)
+     - [Chat Popup Widget](#chat-popup-widget)
    - [Activity Logging](#11-activity-logging)
    - [Notifications](#12-notifications)
    - [Analytics Engine](#13-analytics-engine)
@@ -622,27 +623,81 @@ PdfReport           — Employee submits PDF; manager approves/rejects
 
 **WebSocket Room Naming:**
 ```
-ws/chat/direct/{conversation_id}/   → DirectConversation
-ws/chat/group/{group_id}/           → ChatGroup
+ws/chat/direct/{conversation_id}/?token=<jwt>   → DirectConversation
+ws/chat/group/{group_id}/?token=<jwt>           → ChatGroup
 ```
+JWT auth is passed as a query param (`?token=`). Unauthenticated connections are closed with code `4001`.
 
 **Message Flow:**
-1. User types → `useChat.js` sends via WebSocket `{ type: 'chat_message', content: '...' }`
-2. `ChatConsumer` receives → saves `Message` to DB → broadcasts to room group
-3. All room members receive `{ type: 'new_message', message: {...} }`
-4. `chatStore.js` appends to messages list → React re-renders
+1. User types → `ChatPopup`/`ChatPage` sends via REST `POST /api/chat/conversations/{id}/send/`
+2. View saves `Message` to DB → calls `_broadcast_message()` → `channel_layer.group_send` to WS room
+3. `ChatConsumer` broadcasts `{ type: 'message', ... }` to all room members
+4. `useChat.js` receives event → `chatStore.addMessage()` → React re-renders
+5. On connect: consumer sends last 60 messages as `{ type: 'history', messages: [...] }` → `chatStore.setMessages()`
 
-**HTTP Fallback (no Redis):**
+**Optimistic Send (ChatPopup):**
 ```js
-// useChat.js polls /api/chat/conversations/{id}/messages/ every 3s
-// when WebSocket connection is not available
+// onMutate: insert temp entry immediately for instant feedback
+addMessage(roomKey, { id: `temp_${Date.now()}`, content, sender_id, ... })
+// onSuccess: swap temp with confirmed server message (no duplicate)
+replaceTempMessage(roomKey, tempId, serverMessage)
+// onError: roll back the temp entry
+removeMessage(roomKey, tempId)
 ```
+
+**REST Polling Fallback:**
+```
+Messages:      refetchInterval: 5_000   (5 s)   — catches missed WS events
+Conversations: refetchInterval: 30_000  (30 s)  — unread counts + new DMs
+```
+
+**Role-Based DM Permissions (`GET /api/chat/users/`):**
+| Caller Role | Users returned |
+|-------------|----------------|
+| `employee`  | HR, Manager, Admin, Founder only |
+| All others  | Everyone (all active users except self) |
+
+**chatStore.js Key Actions:**
+| Action | Description |
+|--------|-------------|
+| `setMessages(roomKey, msgs)` | Replace full message array (called on WS history + REST poll) |
+| `addMessage(roomKey, msg)` | Append if `msg.id` not already present (dedup) |
+| `replaceTempMessage(roomKey, tempId, realMsg)` | Swap optimistic temp → server-confirmed message |
+| `removeMessage(roomKey, msgId)` | Remove by id (error rollback) |
+| `markRead(roomKey, userId, messageIds)` | Update `read_by` array on specific messages |
+| `resetUnread(type, id)` | Zero the `unread_count` on a conversation/group |
+| `setTyping(roomKey, userId, name, isTyping)` | Manage per-room typing indicators |
 
 **PDF Report Workflow:**
 - Employee uploads PDF via chat interface
 - Creates `PdfReport` record (status: `pending`)
 - Manager sees notification → can approve/reject via API
 - Status updates: `pending → approved/rejected`
+
+---
+
+#### Chat Popup Widget
+
+A floating WhatsApp/Messenger-style chat widget rendered on every dashboard page via `Layout.jsx`.
+
+**Component tree:**
+```
+ChatPopup (root — fixed bottom-right z-50)
+ ├── FloatingButton  (56px indigo circle, unread badge)
+ └── Panel (320×480px, slate-800)
+      ├── ConversationList  (search bar, [+] new-DM, conv rows with unread counts)
+      └── ChatWindow        (header with status dot + [←] back + [↗] full-chat,
+                             scrollable message list, textarea + Enter-to-send,
+                             typing indicator, read receipts via WS)
+```
+
+**Key behaviours:**
+- Panel closes on `mousedown` outside the widget (not `click`)
+- Red unread badge (`bg-red-500`) on the floating button when `totalUnread > 0` and panel is closed
+- Indigo unread count badge on each conversation row
+- WS hook (`useChat`) auto-reconnects every 5 s on disconnect
+- `usePresenceStore` drives the online/away/offline status dot in the ChatWindow header
+- "Open full chat ↗" link and `[↗]` header button both navigate to `/chat`
 
 ---
 
@@ -871,15 +926,27 @@ class Department(models.Model):
 | GET    | `/api/analytics/completion-rate/`        | Manager+ | Overall % complete       |
 
 ### Chat
-| Method | Endpoint                                       | Description                  |
-|--------|------------------------------------------------|------------------------------|
-| GET    | `/api/chat/conversations/`                     | List direct conversations    |
-| POST   | `/api/chat/conversations/`                     | Start new conversation       |
-| GET    | `/api/chat/conversations/{id}/messages/`       | Message history              |
-| POST   | `/api/chat/conversations/{id}/messages/`       | Send message (HTTP fallback) |
-| GET    | `/api/chat/groups/`                            | List groups (paginated)      |
-| POST   | `/api/chat/groups/`                            | Create group                 |
-| POST   | `/api/chat/groups/{id}/join/`                  | Join group                   |
+| Method | Endpoint                                       | Roles | Description                          |
+|--------|------------------------------------------------|-------|--------------------------------------|
+| GET    | `/api/chat/users/`                             | All   | Messageable users (role-filtered)    |
+| GET    | `/api/chat/conversations/`                     | All   | List my direct conversations         |
+| POST   | `/api/chat/conversations/create/`              | All   | Get-or-create DM `{ user_id }`       |
+| GET    | `/api/chat/conversations/{id}/messages/`       | All   | Message history                      |
+| POST   | `/api/chat/conversations/{id}/send/`           | All   | Send message (text or file upload)   |
+| GET    | `/api/chat/groups/`                            | All   | List my groups (paginated)           |
+| POST   | `/api/chat/groups/`                            | All   | Create group                         |
+| GET    | `/api/chat/groups/{id}/`                       | All   | Group detail                         |
+| PATCH  | `/api/chat/groups/{id}/`                       | Admin | Update group                         |
+| DELETE | `/api/chat/groups/{id}/`                       | Admin | Delete group                         |
+| GET    | `/api/chat/groups/{id}/messages/`              | All   | Group message history                |
+| POST   | `/api/chat/groups/{id}/send/`                  | All   | Send group message (text or file)    |
+| POST   | `/api/chat/groups/{id}/members/`               | Admin | Add member `{ user_id }`             |
+| DELETE | `/api/chat/groups/{id}/members/{user_id}/`     | Admin | Remove member                        |
+| GET    | `/api/chat/reports/`                           | All   | My submitted PDF reports             |
+| POST   | `/api/chat/reports/`                           | Employee | Submit PDF report                 |
+| GET    | `/api/chat/reports/admin/`                     | Manager+ | All reports (approve/reject view) |
+| GET    | `/api/chat/reports/{id}/`                      | All   | Report detail                        |
+| PATCH  | `/api/chat/reports/{id}/`                      | Manager+ | Approve or reject report          |
 
 ### Notifications
 | Method | Endpoint                          | Description              |
@@ -924,16 +991,30 @@ class Department(models.Model):
 { "type": "presence.update", "user_id": 10, "status": "offline" }
 ```
 
-### Chat (`ws/chat/<type>/<id>/`)
+### Chat (`ws/chat/<room_type>/<room_id>/?token=<jwt>`)
 ```json
-// Outgoing (send message)
-{ "type": "chat_message", "content": "Hello!", "file": null }
+// ── Incoming: on connect, last 60 messages delivered as history ──
+{ "type": "history", "messages": [
+    { "id": 42, "sender_id": 1, "sender_name": "Founder",
+      "content": "Hello!", "created_at": "...", "read_by": [1, 3] }
+]}
 
-// Incoming (new message)
-{ "type": "new_message", "message": {
-    "id": 42, "sender_id": 1, "sender_name": "Ankur Founder",
-    "content": "Hello!", "created_at": "...", "is_mine": true
-}}
+// ── Incoming: new message broadcast (from another user or self) ──
+{ "type": "message",
+  "id": 43, "sender_id": 3, "sender_name": "Ashvin Raygor",
+  "content": "Hi back!", "created_at": "...", "read_by": [] }
+
+// ── Incoming: read receipt ──
+{ "type": "read_receipt", "user_id": 3, "message_ids": [42, 43] }
+
+// ── Incoming: typing indicator ──
+{ "type": "typing", "user_id": 3, "user_name": "Ashvin Raygor", "is_typing": true }
+
+// ── Outgoing: mark messages as read ──
+{ "type": "read", "message_ids": [42, 43] }
+
+// ── Outgoing: typing indicator ──
+{ "type": "typing", "is_typing": true }
 ```
 
 ---
@@ -956,10 +1037,13 @@ class Department(models.Model):
 | Submit daily work log        |    ✗    |   ✗   |    ✓    |    ✓     |
 | Approve work logs            |    ✓    |   ✓   |    ✓    |    ✗     |
 | View Reports page            |    ✓    |   ✓   |    ✓    |    ✗     |
-| Chat (Direct messages)       |    ✓    |   ✓   |    ✓    |    ✓     |
+| Chat (Direct messages)       |    ✓    |   ✓   |    ✓    | HR/Mgr+ only¹ |
 | Chat (Group messages)        |    ✓    |   ✓   |    ✓    |    ✓     |
+| Submit PDF report            |    ✗    |   ✗   |    ✗    |    ✓     |
 | Approve PDF reports          |    ✓    |   ✓   |    ✓    |    ✗     |
 | Manager Dashboard            |    ✓    |   ✓   |    ✓    |    ✗     |
+
+> ¹ Employees can send/receive messages in existing DMs, but the DM picker (`GET /api/chat/users/`) only returns HR, Manager, Admin and Founder users — employees cannot initiate DMs with other employees.
 
 ---
 
