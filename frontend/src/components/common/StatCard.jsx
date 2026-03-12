@@ -13,13 +13,13 @@ export default function StatCard({ title, value, icon: Icon, color = 'indigo', s
 
   return (
     <div className="stat-card fade-in">
-      <div className={clsx('w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0', colorMap[color])}>
-        <Icon className="w-6 h-6" />
+      <div className={clsx('w-9 h-9 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0', colorMap[color])}>
+        <Icon className="w-4 h-4 sm:w-6 sm:h-6" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">{title}</p>
-        <p className="text-2xl font-bold text-white mt-0.5">{value ?? '—'}</p>
-        {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
+        <p className="text-slate-400 text-[10px] sm:text-xs font-medium uppercase tracking-tight sm:tracking-wider leading-tight truncate">{title}</p>
+        <p className="text-xl sm:text-2xl font-bold text-white mt-0.5">{value ?? '—'}</p>
+        {subtitle && <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5 truncate">{subtitle}</p>}
       </div>
       {trend && (
         <div className={clsx(
