@@ -52,6 +52,25 @@ export const useChatStore = create((set, get) => ({
       return { messages: { ...s.messages, [roomKey]: [...existing, msg] } }
     }),
 
+  // Replace an optimistic temp message with the confirmed server message.
+  // If the server message already arrived via WS, just remove the temp entry.
+  replaceTempMessage: (roomKey, tempId, realMsg) =>
+    set((s) => {
+      const existing = s.messages[roomKey] || []
+      const realExists = existing.some((m) => m.id === realMsg.id)
+      const next = realExists
+        ? existing.filter((m) => m.id !== tempId)
+        : existing.map((m) => (m.id === tempId ? realMsg : m))
+      return { messages: { ...s.messages, [roomKey]: next } }
+    }),
+
+  // Remove a single message by id (e.g. rollback a failed optimistic entry).
+  removeMessage: (roomKey, msgId) =>
+    set((s) => {
+      const existing = s.messages[roomKey] || []
+      return { messages: { ...s.messages, [roomKey]: existing.filter((m) => m.id !== msgId) } }
+    }),
+
   // ── Read receipts ─────────────────────────────────────────────────────────
 
   markRead: (roomKey, userId, messageIds) =>

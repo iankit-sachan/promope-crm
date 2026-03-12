@@ -84,6 +84,54 @@ def _create_notification(user, title, message, notification_type='info'):
         pass
 
 
+# ── Messageable Users ─────────────────────────────────────────────────────────
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def messageable_users(request):
+    """
+    Returns users the caller is allowed to DM, formatted for the chat popup picker.
+
+    - Employees can only message HR, managers, admins and founders.
+    - All other roles (hr / manager / admin / founder) can message everyone.
+
+    Response: [{ id, full_name, email, role, profile_photo }]
+    Supports ?search=<name|email> for live search filtering.
+    """
+    PRIVILEGED_ROLES = {'hr', 'manager', 'admin', 'founder'}
+    caller = request.user
+    caller_role = getattr(caller, 'role', 'employee')
+
+    qs = User.objects.exclude(pk=caller.pk).filter(is_active=True)
+
+    if caller_role == 'employee':
+        qs = qs.filter(role__in=PRIVILEGED_ROLES)
+
+    search = request.query_params.get('search', '').strip()
+    if search:
+        from django.db.models import Q
+        qs = qs.filter(Q(full_name__icontains=search) | Q(email__icontains=search))
+
+    qs = qs.select_related('employee_profile').order_by('full_name')
+
+    data = [
+        {
+            'id': u.pk,
+            'full_name': u.full_name or u.email,
+            'email': u.email,
+            'role': u.role,
+            'profile_photo': (
+                request.build_absolute_uri(u.employee_profile.profile_photo.url)
+                if hasattr(u, 'employee_profile') and u.employee_profile
+                   and u.employee_profile.profile_photo
+                else None
+            ),
+        }
+        for u in qs
+    ]
+    return Response(data)
+
+
 # ── Direct Conversations ───────────────────────────────────────────────────────
 
 @api_view(['GET'])

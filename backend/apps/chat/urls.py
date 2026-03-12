@@ -2,6 +2,11 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # ── Messageable users (for DM picker — accessible to all roles) ────────────
+    path('users/',
+         views.messageable_users,
+         name='chat-messageable-users'),
+
     # ── Direct conversations ───────────────────────────────────────────────────
     path('conversations/',
          views.list_conversations,

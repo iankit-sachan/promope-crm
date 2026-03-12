@@ -9,7 +9,7 @@
  *  - useChatStore       conversations / messages / unread / typing
  *  - usePresenceStore   online/away/offline status
  *  - chatService.*      REST calls
- *  - employeeService    user list for new-DM search
+ *  - chatService.messageableUsers  user list for new-DM search (role-filtered by backend)
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react'
@@ -19,7 +19,7 @@ import { useAuthStore }     from '../../store/authStore'
 import { useChatStore }     from '../../store/chatStore'
 import { usePresenceStore } from '../../store/presenceStore'
 import { useChat }          from '../../hooks/useChat'
-import { chatService, employeeService } from '../../services/api'
+import { chatService } from '../../services/api'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -126,7 +126,7 @@ function ChatWindow({ convId, otherUser, onBack }) {
   const user       = useAuthStore((s) => s.user)
   const messages   = useChatStore((s) => s.messages[`direct_${convId}`] || [])
   const typing     = useChatStore((s) => s.typing[`direct_${convId}`] || {})
-  const { setMessages, addMessage } = useChatStore()
+  const { setMessages, addMessage, replaceTempMessage, removeMessage } = useChatStore()
   const [text, setText]   = useState('')
   const messagesEndRef    = useRef(null)
   const typingTimerRef    = useRef(null)
@@ -167,17 +167,22 @@ function ChatWindow({ convId, otherUser, onBack }) {
   const sendMutation = useMutation({
     mutationFn: ({ content }) => chatService.sendDirectMessage(convId, { content }),
     onMutate: ({ content }) => {
+      const tempId = `temp_${Date.now()}`
       addMessage(`direct_${convId}`, {
-        id: `temp_${Date.now()}`,
+        id: tempId,
         content,
         sender_id: user?.id,
         created_at: new Date().toISOString(),
         read_by: [],
       })
+      return { tempId }
     },
-    onSuccess: (res) => {
-      if (res?.data) addMessage(`direct_${convId}`, res.data)
+    onSuccess: (res, _vars, context) => {
+      if (res?.data) replaceTempMessage(`direct_${convId}`, context.tempId, res.data)
       qc.invalidateQueries({ queryKey: ['chat-conversations'] })
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.tempId) removeMessage(`direct_${convId}`, context.tempId)
     },
   })
 
@@ -360,11 +365,11 @@ function ConversationList({ onSelectConv, currentUser }) {
     enabled: !!currentUser,
   })
 
-  // Load all users for new-DM search
+  // Load messageable users for new-DM search (role-filtered by backend, accessible to all roles)
   const { data: allUsers = [] } = useQuery({
-    queryKey: ['employees-list-popup'],
+    queryKey: ['chat-messageable-users'],
     queryFn: async () => {
-      const r = await employeeService.list({ page_size: 200 })
+      const r = await chatService.messageableUsers({ page_size: 200 })
       return r.data?.results ?? r.data ?? []
     },
     enabled: showNewDM,
@@ -377,7 +382,7 @@ function ConversationList({ onSelectConv, currentUser }) {
       const conv = res.data
       qc.invalidateQueries({ queryKey: ['chat-conversations'] })
       if (conv?.id) {
-        const other = conv.participants?.find((p) => p.id !== currentUser?.id) || {}
+        const other = conv.other_user || conv.participants?.find((p) => p.id !== currentUser?.id) || {}
         onSelectConv(conv, other)
       }
       setShowNewDM(false)
@@ -391,15 +396,11 @@ function ConversationList({ onSelectConv, currentUser }) {
     return name.includes(search.toLowerCase())
   })
 
-  // Filter users for new-DM: employees can only DM HR/Founder
+  // Backend already filters by role; apply client-side name/email search only
   const dmUsers = allUsers.filter((u) => {
-    if (u.user?.id === currentUser?.id || u.id === currentUser?.id) return false
-    const role = u.role || u.user?.role || ''
-    if (!canMessageEveryone) return ['hr', 'founder'].includes(role)
-    return true
-  }).filter((u) => {
-    const name = (u.full_name || u.name || u.user?.full_name || '').toLowerCase()
-    const email = (u.email || u.user?.email || '').toLowerCase()
+    if (!newDMSearch) return true
+    const name  = (u.full_name || u.name || '').toLowerCase()
+    const email = (u.email || '').toLowerCase()
     return name.includes(newDMSearch.toLowerCase()) || email.includes(newDMSearch.toLowerCase())
   })
 

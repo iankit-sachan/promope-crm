@@ -181,6 +181,9 @@ export const reportService = {
 }
 
 export const chatService = {
+  // Users available to DM (role-filtered, accessible to all authenticated users)
+  messageableUsers: (params) => api.get('/chat/users/', { params }),
+
   // Direct conversations
   conversations:      ()         => api.get('/chat/conversations/'),
   createConversation: (userId)   => api.post('/chat/conversations/create/', { user_id: userId }),
