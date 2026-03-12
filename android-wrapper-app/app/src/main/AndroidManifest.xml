@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- ── Base permissions ─────────────────────────────────────────────── -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- ── Chat notification permissions ─────────────────────────────────── -->
+    <!-- POST_NOTIFICATIONS required on Android 13+ (API 33) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Required for ChatNotificationService (ForegroundService) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- Foreground service type: dataSync (background REST polling) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.PromoPe"
+        android:usesCleartextTraffic="false">
+
+        <!-- ── Splash Screen (launcher activity) ─────────────────────────── -->
+        <activity
+            android:name=".SplashActivity"
+            android:exported="true"
+            android:theme="@style/Theme.PromoPe.Splash"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- ── Main WebView Activity ──────────────────────────────────────── -->
+        <!--
+            android:exported="true"     → required for deep-link PendingIntents
+            android:launchMode="singleTop" → onNewIntent fires when tapping a
+                                             notification while app is already open
+        -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
+
+            <!-- Deep-link intent filter for chat notifications -->
+            <intent-filter>
+                <action android:name="com.promope.app.OPEN_CHAT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- ── Background chat notification service ───────────────────────── -->
+        <!--
+            android:foregroundServiceType="dataSync" → matches the FOREGROUND_SERVICE_DATA_SYNC
+                                                        permission declared above
+            android:exported="false"                 → internal use only
+        -->
+        <service
+            android:name=".ChatNotificationService"
+            android:foregroundServiceType="dataSync"
+            android:exported="false" />
+
+    </application>
+
+</manifest>

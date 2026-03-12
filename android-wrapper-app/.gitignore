@@ -1,0 +1,22 @@
+# Built APKs and outputs
+app/build/
+build/
+
+# Gradle cache
+.gradle/
+gradle/wrapper/gradle-wrapper.jar
+
+# Android Studio files
+.idea/
+*.iml
+*.iws
+*.ipr
+local.properties
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Signing keystore (never commit)
+*.jks
+*.keystore
