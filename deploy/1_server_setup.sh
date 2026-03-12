@@ -52,7 +52,7 @@ sudo -u postgres psql <<SQL
 DO \$\$
 BEGIN
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'crm_user') THEN
-    CREATE USER crm_user WITH PASSWORD 'CRM_Prod@2024';
+    CREATE USER crm_user WITH PASSWORD 'StrongPassword123';
   END IF;
 END
 \$\$;

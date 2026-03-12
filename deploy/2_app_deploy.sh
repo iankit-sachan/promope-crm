@@ -52,7 +52,7 @@ ALLOWED_HOSTS=3.110.120.55,localhost,127.0.0.1
 # Database
 DB_NAME=crm_db
 DB_USER=crm_user
-DB_PASSWORD=CRM_Prod@2024
+DB_PASSWORD=StrongPassword123
 DB_HOST=localhost
 DB_PORT=5432
 
