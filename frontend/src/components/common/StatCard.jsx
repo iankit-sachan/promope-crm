@@ -17,9 +17,9 @@ export default function StatCard({ title, value, icon: Icon, color = 'indigo', s
         <Icon className="w-4 h-4 sm:w-6 sm:h-6" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-slate-400 text-[10px] sm:text-xs font-medium uppercase tracking-tight sm:tracking-wider leading-tight truncate">{title}</p>
+        <p className="text-slate-400 text-[10px] sm:text-xs font-medium uppercase tracking-tight sm:tracking-wider leading-tight overflow-hidden break-words">{title}</p>
         <p className="text-xl sm:text-2xl font-bold text-white mt-0.5">{value ?? '—'}</p>
-        {subtitle && <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5 truncate">{subtitle}</p>}
+        {subtitle && <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5 overflow-hidden">{subtitle}</p>}
       </div>
       {trend && (
         <div className={clsx(
