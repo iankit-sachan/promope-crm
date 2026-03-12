@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
+import ChatPopup from '../chat/ChatPopup'
 import { useActivityFeed } from '../../hooks/useWebSocket'
 import { usePresence }     from '../../hooks/usePresence'
 
@@ -35,6 +36,9 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Floating chat popup — visible on all dashboard pages */}
+      <ChatPopup />
     </div>
   )
 }
