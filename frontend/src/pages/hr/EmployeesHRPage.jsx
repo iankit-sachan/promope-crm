@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Edit, UserX, UserCheck, X, ChevronDown } from 'lucide-react'
+import { Search, Edit, UserX, UserCheck, X, ChevronDown, UserPlus } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { employeeService, departmentService } from '../../services/api'
 import { formatDate, initials } from '../../utils/helpers'
 import clsx from 'clsx'
@@ -154,9 +155,15 @@ export default function EmployeesHRPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">HR — Employees</h1>
-        <p className="text-slate-400 text-sm mt-1">Manage employee records and assignments</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">HR — Employees</h1>
+          <p className="text-slate-400 text-sm mt-1">Manage employee records and assignments</p>
+        </div>
+        <Link to="/employees/add" className="btn-primary flex items-center gap-2">
+          <UserPlus className="w-4 h-4" />
+          Add Employee
+        </Link>
       </div>
 
       {/* Filters */}
