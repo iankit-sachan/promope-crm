@@ -42,6 +42,11 @@ class PresenceConsumer(AsyncWebsocketConsumer):
         await self.broadcast_snapshot()
 
     async def disconnect(self, close_code):
+        # Guard: unauthenticated connections are closed in connect() before
+        # accept(); disconnect() still fires — skip DB/group ops for them.
+        if not getattr(self, 'user', None) or not self.user.is_authenticated:
+            return
+
         await self.set_presence('offline')
 
         if hasattr(self, 'user_group'):
