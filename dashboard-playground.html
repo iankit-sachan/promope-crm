@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PromoPe Dashboard Layout Playground</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ui-bg: #0a0e1a;
+    --ui-surface: #111827;
+    --ui-border: #1f2937;
+    --ui-text: #e2e8f0;
+    --ui-muted: #6b7280;
+    --ui-accent: #6366f1;
+    --ui-accent-dim: rgba(99,102,241,0.15);
+    --ui-hover: #1a2235;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--ui-bg);
+    color: var(--ui-text);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    font-size: 13px;
+  }
+
+  /* ── Left panel ── */
+  #controls {
+    width: 300px;
+    min-width: 300px;
+    background: var(--ui-surface);
+    border-right: 1px solid var(--ui-border);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #controls::-webkit-scrollbar { width: 4px; }
+  #controls::-webkit-scrollbar-track { background: transparent; }
+  #controls::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
+
+  .panel-header {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--ui-border);
+    position: sticky;
+    top: 0;
+    background: var(--ui-surface);
+    z-index: 10;
+  }
+  .panel-header h1 {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ui-muted);
+  }
+  .panel-header p {
+    font-size: 11px;
+    color: #4b5563;
+    margin-top: 2px;
+  }
+
+  /* Presets */
+  .presets {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--ui-border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .preset-btn {
+    background: #1f2937;
+    border: 1px solid #374151;
+    color: #9ca3af;
+    font-size: 11px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .preset-btn:hover { background: #374151; color: var(--ui-text); }
+  .preset-btn.active { background: var(--ui-accent-dim); border-color: var(--ui-accent); color: var(--ui-accent); }
+
+  /* Control groups */
+  .ctrl-group {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--ui-border);
+  }
+  .ctrl-group-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #4b5563;
+    margin-bottom: 10px;
+  }
+  .ctrl-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    gap: 8px;
+  }
+  .ctrl-row:last-child { margin-bottom: 0; }
+  .ctrl-label {
+    font-size: 12px;
+    color: #9ca3af;
+    flex-shrink: 0;
+    min-width: 110px;
+  }
+  .ctrl-value {
+    font-size: 11px;
+    color: var(--ui-accent);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    min-width: 36px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* Slider */
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 3px;
+    background: #374151;
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--ui-accent);
+    cursor: pointer;
+    box-shadow: 0 0 0 2px rgba(99,102,241,0.3);
+    transition: box-shadow 0.15s;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover {
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.4);
+  }
+
+  /* Select */
+  select {
+    background: #1f2937;
+    border: 1px solid #374151;
+    color: var(--ui-text);
+    font-size: 12px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    outline: none;
+    flex: 1;
+  }
+  select:focus { border-color: var(--ui-accent); }
+
+  /* Toggle */
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle {
+    position: relative;
+    width: 32px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: #374151;
+    border-radius: 18px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    left: 3px;
+    top: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .toggle input:checked + .toggle-slider { background: var(--ui-accent); }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(14px); }
+
+  /* Column button group */
+  .col-btns { display: flex; gap: 4px; }
+  .col-btn {
+    flex: 1;
+    background: #1f2937;
+    border: 1px solid #374151;
+    color: #9ca3af;
+    font-size: 12px;
+    padding: 5px 0;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .col-btn:hover { background: #374151; color: var(--ui-text); }
+  .col-btn.active { background: var(--ui-accent-dim); border-color: var(--ui-accent); color: var(--ui-accent); }
+
+  /* Hue swatch */
+  .hue-swatch {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid #374151;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+
+  /* ── Right panel ── */
+  #right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Preview area */
+  #preview-wrap {
+    flex: 1;
+    overflow: auto;
+    padding: 0;
+    background: #060a14;
+  }
+
+  /* Mock dashboard */
+  #mock-dashboard {
+    min-height: 100%;
+    transition: background 0.2s;
+  }
+
+  .mock-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    height: 56px;
+    background: rgba(255,255,255,0.03);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  .mock-header-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--ui-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 14px;
+    color: white;
+  }
+  .logo-text { font-weight: 700; font-size: 15px; color: #f1f5f9; }
+  .mock-header-nav {
+    display: flex;
+    gap: 24px;
+  }
+  .mock-nav-item {
+    font-size: 13px;
+    color: #6b7280;
+    cursor: default;
+  }
+  .mock-nav-item.active { color: #f1f5f9; }
+  .mock-header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .mock-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 13px;
+    color: white;
+  }
+  .mock-notif {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    font-size: 15px;
+    position: relative;
+  }
+  .mock-notif-dot {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #ef4444;
+    border: 2px solid;
+  }
+
+  .mock-body {
+    /* padding set dynamically */
+  }
+
+  .mock-page-title {
+    font-weight: 700;
+    font-size: 20px;
+    color: #f1f5f9;
+    margin-bottom: 4px;
+  }
+  .mock-page-sub {
+    font-size: 13px;
+    color: #4b5563;
+    margin-bottom: 20px;
+  }
+
+  /* Stat cards grid */
+  #stat-grid {
+    display: grid;
+    /* columns and gap set dynamically */
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    /* all styles set dynamically */
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .stat-card:hover { transform: translateY(-1px); }
+
+  .stat-card-accent-bar {
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px;
+    height: 100%;
+    /* background set dynamically */
+    border-radius: 0 2px 2px 0;
+    opacity: 0.7;
+  }
+
+  .stat-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    margin-bottom: 12px;
+    /* background set dynamically */
+  }
+
+  .stat-label {
+    font-weight: 500;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    /* font-size set dynamically */
+    margin-bottom: 4px;
+  }
+  .stat-value {
+    /* font-size, font-weight, color set dynamically */
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .stat-trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 99px;
+  }
+  .stat-trend.up { background: rgba(34,197,94,0.15); color: #22c55e; }
+  .stat-trend.down { background: rgba(239,68,68,0.12); color: #ef4444; }
+  .stat-trend.neutral { background: rgba(156,163,175,0.15); color: #9ca3af; }
+
+  /* Bottom row */
+  .mock-bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 16px;
+  }
+
+  .mock-chart-card {
+    border-radius: 12px;
+    /* background, border set dynamically */
+    overflow: hidden;
+  }
+  .mock-chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .mock-chart-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #e2e8f0;
+  }
+  .mock-chart-badge {
+    font-size: 11px;
+    color: #22c55e;
+    background: rgba(34,197,94,0.12);
+    padding: 2px 8px;
+    border-radius: 99px;
+  }
+  .mock-chart-body {
+    padding: 16px 20px 20px;
+    height: 180px;
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+  }
+  .chart-bar-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    height: 100%;
+    justify-content: flex-end;
+  }
+  .chart-bar {
+    width: 100%;
+    border-radius: 4px 4px 0 0;
+    /* background set dynamically */
+    transition: height 0.3s ease;
+  }
+  .chart-bar-label {
+    font-size: 10px;
+    color: #4b5563;
+    text-align: center;
+  }
+
+  /* Activity card */
+  .mock-activity-card {
+    border-radius: 12px;
+    overflow: hidden;
+    /* background set dynamically */
+  }
+  .mock-activity-header {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-weight: 600;
+    font-size: 14px;
+    color: #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .mock-activity-see {
+    font-size: 11px;
+    color: var(--ui-accent);
+    cursor: pointer;
+  }
+  .activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.1s;
+  }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-item:hover { background: rgba(255,255,255,0.02); }
+  .act-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: white;
+  }
+  .act-content { flex: 1; min-width: 0; }
+  .act-text { font-size: 12px; color: #d1d5db; line-height: 1.4; }
+  .act-text strong { color: #f1f5f9; }
+  .act-time { font-size: 10px; color: #4b5563; margin-top: 2px; }
+
+  /* ── Prompt output ── */
+  #prompt-section {
+    border-top: 1px solid var(--ui-border);
+    background: var(--ui-surface);
+    padding: 14px 20px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    min-height: 70px;
+    max-height: 110px;
+  }
+  #prompt-text {
+    flex: 1;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #d1d5db;
+    overflow-y: auto;
+  }
+  #prompt-text::-webkit-scrollbar { width: 3px; }
+  #prompt-text::-webkit-scrollbar-thumb { background: #374151; }
+  #copy-btn {
+    background: var(--ui-accent-dim);
+    border: 1px solid var(--ui-accent);
+    color: var(--ui-accent);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  #copy-btn:hover { background: var(--ui-accent); color: white; }
+  #copy-btn.copied { background: rgba(34,197,94,0.15); border-color: #22c55e; color: #22c55e; }
+
+  /* Slider + value layout */
+  .slider-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Left: Controls ── -->
+<div id="controls">
+  <div class="panel-header">
+    <h1>Dashboard Playground</h1>
+    <p>Adjust controls → copy prompt</p>
+  </div>
+
+  <!-- Presets -->
+  <div class="presets">
+    <button class="preset-btn active" data-preset="current">PromoPe Current</button>
+    <button class="preset-btn" data-preset="compact">Compact Dark</button>
+    <button class="preset-btn" data-preset="airy">Airy Minimal</button>
+    <button class="preset-btn" data-preset="contrast">High Contrast</button>
+    <button class="preset-btn" data-preset="glass">Glass Dark</button>
+  </div>
+
+  <!-- Layout -->
+  <div class="ctrl-group">
+    <div class="ctrl-group-label">Layout</div>
+
+    <div class="ctrl-row">
+      <span class="ctrl-label">Grid columns</span>
+      <div class="col-btns">
+        <button class="col-btn" data-cols="2">2</button>
+        <button class="col-btn active" data-cols="3">3</button>
+        <button class="col-btn" data-cols="4">4</button>
+      </div>
+    </div>
+
+    <div class="ctrl-row">
+      <span class="ctrl-label">Card gap</span>
+      <div class="slider-row">
+        <input type="range" id="gap" min="8" max="32" value="16" />
+        <span class="ctrl-value" id="gap-val">16px</span>
+      </div>
+    </div>
+
+    <div class="ctrl-row">
+      <span class="ctrl-label">Section padding</span>
+      <div class="slider-row">
+        <input type="range" id="padding-outer" min="16" max="48" value="24" />
+        <span class="ctrl-value" id="padding-outer-val">24px</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card Style -->
+  <div class="ctrl-group">
+    <div class="ctrl-group-label">Card Style</div>
+
+    <div class="ctrl-row">
+      <span class="ctrl-label">Border radius</span>
+      <div class="slider-row">
+        <input type="range" id="radius" min="0" max="20" value="12" />
+        <span class="ctrl-value" id="radius-val">12px</span>
+      </div>
+    </div>
+
+    <div class="ctrl-row">
+      <span class="ctrl-label">Vertical padding</span>
+      <div class="slider-row">
+        <input type="range" id="card-pad" min="12" max="32" value="20" />
+        <span class="ctrl-value" id="card-pad-val">20px</span>
+      </div>
+    </div>
+
+    <div class="ctrl-row">
+      <span class="ctrl-label">Shadow depth</span>
+      <select id="shadow">
+        <option value="none">None</option>
+        <option value="subtle" selected>Subtle</option>
+        <option value="medium">Medium</option>
+        <option value="deep">Deep</option>
+      </select>
+    </div>
+
+    <div class="ctrl-row">
+      <span class="ctrl-label">Card border</span>
+      <label class="toggle">
+        <input type="checkbox" id="card-border" />
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div class="ctrl-row">
+      <span class="ctrl-label">Card surface</span>
+      <select id="card-surface">
+        <option value="slate800" selected>slate-800</option>
+        <option value="slate700">slate-700</option>
+        <option value="white8">white/8</option>
+        <option value="zinc800">zinc-800</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Typography -->
+  <div class="ctrl-group">
+    <div class="ctrl-group-label">Typography</div>
+
+    <div class="ctrl-row">
+      <span class="ctrl-label">Label size</span>
+      <div class="slider-row">
+        <input type="range" id="label-size" min="11" max="14" value="12" />
+        <span class="ctrl-value" id="label-size-val">12px</span>
+      </div>
+    </div>
+
+    <div class="ctrl-row">
+      <span class="ctrl-label">Value size</span>
+      <div class="slider-row">
+        <input type="range" id="value-size" min="20" max="36" value="28" />
+        <span class="ctrl-value" id="value-size-val">28px</span>
+      </div>
+    </div>
+
+    <div class="ctrl-row">
+      <span class="ctrl-label">Value weight</span>
+      <select id="value-weight">
+        <option value="400">400 — Regular</option>
+        <option value="500">500 — Medium</option>
+        <option value="600">600 — Semibold</option>
+        <option value="700" selected>700 — Bold</option>
+        <option value="800">800 — Extrabold</option>
+      </select>
+    </div>
+
+    <div class="ctrl-row">
+      <span class="ctrl-label">Trend badge</span>
+      <label class="toggle">
+        <input type="checkbox" id="show-trend" checked />
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Color -->
+  <div class="ctrl-group">
+    <div class="ctrl-group-label">Color</div>
+
+    <div class="ctrl-row">
+      <span class="ctrl-label">Accent hue</span>
+      <div class="slider-row">
+        <input type="range" id="accent-hue" min="0" max="360" value="239" />
+        <span id="hue-swatch" class="hue-swatch"></span>
+      </div>
+    </div>
+
+    <div class="ctrl-row">
+      <span class="ctrl-label">BG darkness</span>
+      <div class="slider-row">
+        <input type="range" id="bg-dark" min="0" max="100" value="85" />
+        <span class="ctrl-value" id="bg-dark-val">85%</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Right: Preview + Prompt ── -->
+<div id="right">
+  <div id="preview-wrap">
+    <div id="mock-dashboard">
+
+      <!-- Header -->
+      <div class="mock-header">
+        <div class="mock-header-logo">
+          <div class="logo-icon">P</div>
+          <span class="logo-text">PromoPe CRM</span>
+        </div>
+        <div class="mock-header-nav">
+          <span class="mock-nav-item active">Dashboard</span>
+          <span class="mock-nav-item">Employees</span>
+          <span class="mock-nav-item">Tasks</span>
+          <span class="mock-nav-item">Chat</span>
+          <span class="mock-nav-item">Reports</span>
+        </div>
+        <div class="mock-header-right">
+          <div class="mock-notif">
+            🔔
+            <span class="mock-notif-dot"></span>
+          </div>
+          <div class="mock-avatar">AK</div>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="mock-body" id="mock-body">
+        <div class="mock-page-title">Good morning, Ankit</div>
+        <div class="mock-page-sub">Here's what's happening today — Friday, 13 March 2026</div>
+
+        <!-- Stat cards -->
+        <div id="stat-grid">
+          <div class="stat-card" id="card-0">
+            <div class="stat-card-accent-bar" id="accent-bar-0"></div>
+            <div class="stat-icon" id="icon-0">👥</div>
+            <div class="stat-label" id="slabel-0">Total Employees</div>
+            <div class="stat-value" id="svalue-0">48</div>
+            <span class="stat-trend up" id="strend-0">↑ +3 this month</span>
+          </div>
+          <div class="stat-card" id="card-1">
+            <div class="stat-card-accent-bar" id="accent-bar-1"></div>
+            <div class="stat-icon" id="icon-1">✅</div>
+            <div class="stat-label" id="slabel-1">Active Tasks</div>
+            <div class="stat-value" id="svalue-1">127</div>
+            <span class="stat-trend down" id="strend-1">↓ 12 overdue</span>
+          </div>
+          <div class="stat-card" id="card-2">
+            <div class="stat-card-accent-bar" id="accent-bar-2"></div>
+            <div class="stat-icon" id="icon-2">📈</div>
+            <div class="stat-label" id="slabel-2">Completion Rate</div>
+            <div class="stat-value" id="svalue-2">84%</div>
+            <span class="stat-trend up" id="strend-2">↑ +6% this week</span>
+          </div>
+          <div class="stat-card" id="card-3">
+            <div class="stat-card-accent-bar" id="accent-bar-3"></div>
+            <div class="stat-icon" id="icon-3">🟢</div>
+            <div class="stat-label" id="slabel-3">Online Now</div>
+            <div class="stat-value" id="svalue-3">19</div>
+            <span class="stat-trend neutral" id="strend-3">— 39% of team</span>
+          </div>
+        </div>
+
+        <!-- Bottom row -->
+        <div class="mock-bottom-row">
+          <!-- Chart -->
+          <div class="mock-chart-card" id="chart-card">
+            <div class="mock-chart-header">
+              <span class="mock-chart-title">Revenue Overview</span>
+              <span class="mock-chart-badge">↑ 18% vs last month</span>
+            </div>
+            <div class="mock-chart-body" id="chart-body">
+              <!-- bars injected by JS -->
+            </div>
+          </div>
+
+          <!-- Activity -->
+          <div class="mock-activity-card" id="activity-card">
+            <div class="mock-activity-header">
+              Recent Activity
+              <span class="mock-activity-see">See all →</span>
+            </div>
+            <div class="activity-item">
+              <div class="act-avatar" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">PK</div>
+              <div class="act-content">
+                <div class="act-text"><strong>Priya K.</strong> submitted daily report</div>
+                <div class="act-time">2 minutes ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="act-avatar" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">RV</div>
+              <div class="act-content">
+                <div class="act-text"><strong>Ravi V.</strong> completed task <strong>#TASK-0042</strong></div>
+                <div class="act-time">18 minutes ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="act-avatar" style="background:linear-gradient(135deg,#22c55e,#14b8a6)">SM</div>
+              <div class="act-content">
+                <div class="act-text"><strong>Sneha M.</strong> added a new employee</div>
+                <div class="act-time">1 hour ago</div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="act-avatar" style="background:linear-gradient(135deg,#3b82f6,#6366f1)">AK</div>
+              <div class="act-content">
+                <div class="act-text"><strong>Ankit K.</strong> reviewed 3 reports</div>
+                <div class="act-time">2 hours ago</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Prompt output -->
+  <div id="prompt-section">
+    <div id="prompt-text"></div>
+    <button id="copy-btn">Copy Prompt</button>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────────
+const DEFAULTS = {
+  cols: 3,
+  gap: 16,
+  paddingOuter: 24,
+  radius: 12,
+  cardPad: 20,
+  shadow: 'subtle',
+  cardBorder: false,
+  cardSurface: 'slate800',
+  labelSize: 12,
+  valueSize: 28,
+  valueWeight: '700',
+  showTrend: true,
+  accentHue: 239,
+  bgDark: 85,
+};
+
+const state = { ...DEFAULTS };
+
+// ── Lookups ────────────────────────────────────────────────────────────────────
+const SHADOWS = {
+  none:   'none',
+  subtle: '0 1px 3px rgba(0,0,0,0.35), 0 1px 2px rgba(0,0,0,0.25)',
+  medium: '0 4px 12px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.3)',
+  deep:   '0 10px 28px rgba(0,0,0,0.6), 0 4px 8px rgba(0,0,0,0.4)',
+};
+const SURFACES = {
+  slate800: '#1e293b',
+  slate700: '#334155',
+  white8:   'rgba(255,255,255,0.08)',
+  zinc800:  '#27272a',
+};
+const SURFACE_NAMES = {
+  slate800: 'slate-800',
+  slate700: 'slate-700',
+  white8:   'white/8',
+  zinc800:  'zinc-800',
+};
+const WEIGHT_NAMES = {
+  '400': 'regular (400)',
+  '500': 'medium (500)',
+  '600': 'semibold (600)',
+  '700': 'bold (700)',
+  '800': 'extrabold (800)',
+};
+const SHADOW_NAMES = {
+  none:   'no shadow',
+  subtle: 'a subtle shadow',
+  medium: 'a medium shadow',
+  deep:   'a deep shadow',
+};
+
+const CHART_HEIGHTS = [55, 70, 45, 85, 60, 95, 75];
+const CHART_LABELS  = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+// ── Accent color helper ────────────────────────────────────────────────────────
+function accentColor(alpha = 1) {
+  return `hsla(${state.accentHue}, 80%, 65%, ${alpha})`;
+}
+function accentBg(alpha = 0.15) {
+  return `hsla(${state.accentHue}, 80%, 65%, ${alpha})`;
+}
+
+// ── Render preview ─────────────────────────────────────────────────────────────
+function renderPreview() {
+  const h = state.accentHue;
+  const bgL = Math.max(4, 18 - state.bgDark * 0.14);
+  const bgColor = `hsl(222, 47%, ${bgL}%)`;
+
+  // Dashboard background
+  document.getElementById('mock-dashboard').style.background = bgColor;
+
+  // Body padding
+  const body = document.getElementById('mock-body');
+  body.style.padding = `${state.paddingOuter}px ${state.paddingOuter}px`;
+
+  // Stat grid
+  const grid = document.getElementById('stat-grid');
+  // Show all 4 cards always (grid handles overflow)
+  const cols = state.cols;
+  grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  grid.style.gap = `${state.gap}px`;
+  grid.style.marginBottom = `${state.gap}px`;
+
+  // Stat cards
+  const surface = SURFACES[state.cardSurface];
+  const borderVal = state.cardBorder
+    ? `1px solid hsla(${h}, 50%, 60%, 0.18)`
+    : '1px solid transparent';
+  const shadowVal = SHADOWS[state.shadow];
+
+  for (let i = 0; i < 4; i++) {
+    const card = document.getElementById(`card-${i}`);
+    card.style.background = surface;
+    card.style.borderRadius = `${state.radius}px`;
+    card.style.padding = `${state.cardPad}px ${state.cardPad + 4}px`;
+    card.style.border = borderVal;
+    card.style.boxShadow = shadowVal;
+
+    // Accent bar
+    document.getElementById(`accent-bar-${i}`).style.background = accentColor();
+
+    // Icon bg
+    document.getElementById(`icon-${i}`).style.background = accentBg(0.15);
+
+    // Label
+    const sl = document.getElementById(`slabel-${i}`);
+    sl.style.fontSize = `${state.labelSize}px`;
+
+    // Value
+    const sv = document.getElementById(`svalue-${i}`);
+    sv.style.fontSize = `${state.valueSize}px`;
+    sv.style.fontWeight = state.valueWeight;
+    sv.style.color = accentColor();
+
+    // Trend
+    const st = document.getElementById(`strend-${i}`);
+    st.style.display = state.showTrend ? 'inline-flex' : 'none';
+  }
+
+  // Accent on logo
+  document.querySelector('.logo-icon').style.background = accentColor();
+  document.querySelector('.mock-activity-see').style.color = accentColor();
+
+  // Hue swatch
+  document.getElementById('hue-swatch').style.background = accentColor();
+
+  // Chart bars
+  renderChart();
+
+  // Chart + activity card styling
+  const cardStyle = {
+    background: surface,
+    borderRadius: `${state.radius}px`,
+    border: borderVal,
+    boxShadow: shadowVal,
+  };
+  ['chart-card', 'activity-card'].forEach(id => {
+    const el = document.getElementById(id);
+    Object.assign(el.style, cardStyle);
+  });
+
+  // Bottom row gap
+  document.querySelector('.mock-bottom-row').style.gap = `${state.gap}px`;
+}
+
+function renderChart() {
+  const body = document.getElementById('chart-body');
+  body.innerHTML = '';
+  const maxH = 148;
+  CHART_HEIGHTS.forEach((pct, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'chart-bar-wrap';
+    const bar = document.createElement('div');
+    bar.className = 'chart-bar';
+    bar.style.height = `${Math.round(pct / 100 * maxH)}px`;
+    bar.style.background = i === 4
+      ? accentColor()  // today (Fri) highlighted
+      : accentBg(0.35);
+    bar.style.borderRadius = `${Math.min(state.radius, 6)}px ${Math.min(state.radius, 6)}px 0 0`;
+    const lbl = document.createElement('div');
+    lbl.className = 'chart-bar-label';
+    lbl.textContent = CHART_LABELS[i];
+    wrap.appendChild(bar);
+    wrap.appendChild(lbl);
+    body.appendChild(wrap);
+  });
+}
+
+// ── Prompt output ──────────────────────────────────────────────────────────────
+function updatePrompt() {
+  const D = DEFAULTS;
+  const parts = [];
+
+  if (state.cols !== D.cols)
+    parts.push(`a **${state.cols}-column** grid`);
+  else
+    parts.push(`a **${state.cols}-column** grid`); // always show cols for clarity
+
+  if (state.gap !== D.gap)
+    parts.push(`**${state.gap}px** card gap`);
+
+  if (state.paddingOuter !== D.paddingOuter)
+    parts.push(`**${state.paddingOuter}px** section padding`);
+
+  if (state.radius !== D.radius)
+    parts.push(`**${state.radius}px** border radius`);
+
+  if (state.cardPad !== D.cardPad) {
+    const feel = state.cardPad <= 14 ? 'compact' : state.cardPad >= 26 ? 'spacious' : 'comfortable';
+    parts.push(`**${state.cardPad}px** card padding (${feel} feel)`);
+  }
+
+  if (state.shadow !== D.shadow)
+    parts.push(SHADOW_NAMES[state.shadow]);
+
+  if (state.cardBorder !== D.cardBorder)
+    parts.push(state.cardBorder ? 'a subtle accent border on each card' : 'no card border');
+
+  if (state.cardSurface !== D.cardSurface)
+    parts.push(`**${SURFACE_NAMES[state.cardSurface]}** card surface`);
+
+  if (state.labelSize !== D.labelSize)
+    parts.push(`**${state.labelSize}px** label text`);
+
+  if (state.valueSize !== D.valueSize)
+    parts.push(`**${state.valueSize}px** metric values`);
+
+  if (state.valueWeight !== D.valueWeight)
+    parts.push(`${WEIGHT_NAMES[state.valueWeight]} value text`);
+
+  if (!state.showTrend)
+    parts.push('hide the trend badge');
+
+  // Accent
+  const hueNames = {
+    239: 'indigo',
+    271: 'violet',
+    142: 'green',
+    200: 'sky',
+    0:   'red',
+    30:  'orange',
+    60:  'yellow',
+  };
+  const closestHueName = (() => {
+    let best = null, bestDist = 999;
+    for (const [h, name] of Object.entries(hueNames)) {
+      const dist = Math.abs(parseInt(h) - state.accentHue);
+      if (dist < bestDist) { bestDist = dist; best = name; }
+    }
+    return bestDist < 20 ? best : null;
+  })();
+
+  if (state.accentHue !== D.accentHue) {
+    const hueDesc = closestHueName ? `**${closestHueName}** (hsl ${state.accentHue})` : `hsl(${state.accentHue})`;
+    parts.push(`${hueDesc} accent color`);
+  }
+
+  const isDefault = state.cols === D.cols
+    && state.gap === D.gap
+    && state.paddingOuter === D.paddingOuter
+    && state.radius === D.radius
+    && state.cardPad === D.cardPad
+    && state.shadow === D.shadow
+    && state.cardBorder === D.cardBorder
+    && state.cardSurface === D.cardSurface
+    && state.labelSize === D.labelSize
+    && state.valueSize === D.valueSize
+    && state.valueWeight === D.valueWeight
+    && state.showTrend === D.showTrend
+    && state.accentHue === D.accentHue
+    && state.bgDark === D.bgDark;
+
+  let prompt;
+  if (isDefault) {
+    prompt = 'The current design uses the PromoPe defaults — no changes needed.';
+  } else {
+    // Build natural sentence
+    const main = parts.slice(0, 3).join(', ');
+    const rest = parts.slice(3);
+    if (rest.length === 0) {
+      prompt = `Update the dashboard stat cards to use ${main}.`;
+    } else {
+      prompt = `Update the dashboard stat cards to use ${main}. Also apply: ${rest.join(', ')}.`;
+    }
+  }
+
+  document.getElementById('prompt-text').textContent = prompt;
+}
+
+function updateAll() {
+  renderPreview();
+  updatePrompt();
+}
+
+// ── Wire controls ──────────────────────────────────────────────────────────────
+function wireSlider(id, stateKey, displayId, suffix = 'px') {
+  const el = document.getElementById(id);
+  el.addEventListener('input', () => {
+    state[stateKey] = parseInt(el.value);
+    document.getElementById(displayId).textContent = el.value + suffix;
+    updateAll();
+  });
+}
+
+wireSlider('gap', 'gap', 'gap-val');
+wireSlider('padding-outer', 'paddingOuter', 'padding-outer-val');
+wireSlider('radius', 'radius', 'radius-val');
+wireSlider('card-pad', 'cardPad', 'card-pad-val');
+wireSlider('label-size', 'labelSize', 'label-size-val');
+wireSlider('value-size', 'valueSize', 'value-size-val');
+wireSlider('accent-hue', 'accentHue', null);
+wireSlider('bg-dark', 'bgDark', 'bg-dark-val', '%');
+
+document.getElementById('accent-hue').addEventListener('input', updateAll);
+
+document.getElementById('shadow').addEventListener('change', e => {
+  state.shadow = e.target.value;
+  updateAll();
+});
+document.getElementById('card-surface').addEventListener('change', e => {
+  state.cardSurface = e.target.value;
+  updateAll();
+});
+document.getElementById('value-weight').addEventListener('change', e => {
+  state.valueWeight = e.target.value;
+  updateAll();
+});
+document.getElementById('card-border').addEventListener('change', e => {
+  state.cardBorder = e.target.checked;
+  updateAll();
+});
+document.getElementById('show-trend').addEventListener('change', e => {
+  state.showTrend = e.target.checked;
+  updateAll();
+});
+
+// Column buttons
+document.querySelectorAll('.col-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.col-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.cols = parseInt(btn.dataset.cols);
+    updateAll();
+  });
+});
+
+// ── Presets ────────────────────────────────────────────────────────────────────
+const PRESETS = {
+  current:  { cols:3, gap:16, paddingOuter:24, radius:12, cardPad:20, shadow:'subtle',  cardBorder:false, cardSurface:'slate800', labelSize:12, valueSize:28, valueWeight:'700', showTrend:true,  accentHue:239, bgDark:85 },
+  compact:  { cols:4, gap:10, paddingOuter:20, radius:8,  cardPad:12, shadow:'none',    cardBorder:false, cardSurface:'slate800', labelSize:11, valueSize:22, valueWeight:'700', showTrend:true,  accentHue:239, bgDark:90 },
+  airy:     { cols:2, gap:24, paddingOuter:40, radius:16, cardPad:28, shadow:'medium',  cardBorder:false, cardSurface:'slate700', labelSize:13, valueSize:32, valueWeight:'600', showTrend:true,  accentHue:271, bgDark:75 },
+  contrast: { cols:3, gap:16, paddingOuter:24, radius:6,  cardPad:20, shadow:'deep',    cardBorder:true,  cardSurface:'white8',   labelSize:12, valueSize:30, valueWeight:'800', showTrend:true,  accentHue:142, bgDark:95 },
+  glass:    { cols:3, gap:20, paddingOuter:28, radius:16, cardPad:24, shadow:'deep',    cardBorder:true,  cardSurface:'white8',   labelSize:12, valueSize:28, valueWeight:'600', showTrend:false, accentHue:200, bgDark:80 },
+};
+
+function applyPreset(name) {
+  const p = PRESETS[name];
+  Object.assign(state, p);
+
+  // Sync all DOM controls to new state
+  document.getElementById('gap').value = p.gap;
+  document.getElementById('gap-val').textContent = p.gap + 'px';
+  document.getElementById('padding-outer').value = p.paddingOuter;
+  document.getElementById('padding-outer-val').textContent = p.paddingOuter + 'px';
+  document.getElementById('radius').value = p.radius;
+  document.getElementById('radius-val').textContent = p.radius + 'px';
+  document.getElementById('card-pad').value = p.cardPad;
+  document.getElementById('card-pad-val').textContent = p.cardPad + 'px';
+  document.getElementById('label-size').value = p.labelSize;
+  document.getElementById('label-size-val').textContent = p.labelSize + 'px';
+  document.getElementById('value-size').value = p.valueSize;
+  document.getElementById('value-size-val').textContent = p.valueSize + 'px';
+  document.getElementById('accent-hue').value = p.accentHue;
+  document.getElementById('bg-dark').value = p.bgDark;
+  document.getElementById('bg-dark-val').textContent = p.bgDark + '%';
+  document.getElementById('shadow').value = p.shadow;
+  document.getElementById('card-surface').value = p.cardSurface;
+  document.getElementById('value-weight').value = p.valueWeight;
+  document.getElementById('card-border').checked = p.cardBorder;
+  document.getElementById('show-trend').checked = p.showTrend;
+
+  document.querySelectorAll('.col-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.cols) === p.cols);
+  });
+
+  updateAll();
+}
+
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applyPreset(btn.dataset.preset);
+  });
+});
+
+// ── Copy button ────────────────────────────────────────────────────────────────
+document.getElementById('copy-btn').addEventListener('click', () => {
+  const text = document.getElementById('prompt-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Copy Prompt';
+      btn.classList.remove('copied');
+    }, 1800);
+  });
+});
+
+// ── Init ───────────────────────────────────────────────────────────────────────
+updateAll();
+</script>
+</body>
+</html>
