@@ -22,8 +22,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import AttendanceLog, UserPresence
-from .serializers import AttendanceLogSerializer
+from .models import AttendanceLog, UserPresence, AttendanceRegularization, AttendanceStreak, is_working_day
+from .serializers import AttendanceLogSerializer, AttendanceRegularizationSerializer, AttendanceStreakSerializer
 from apps.authentication.permissions import IsManagerOrAbove
 
 
@@ -78,6 +78,9 @@ def checkin_view(request):
     if created:
         log.auto_set_status()
         log.save(update_fields=['status'])
+        # Update streak
+        streak, _ = AttendanceStreak.objects.get_or_create(employee=employee)
+        streak.update_from_log(log)
     elif not log.login_time:
         # Record existed (e.g. manually created) but no login yet
         log.login_time = timezone.now()
@@ -395,7 +398,7 @@ def attendance_monthly_report(request):
     month_end   = datetime.date(year, month, calendar.monthrange(year, month)[1])
     working_days = sum(
         1 for i in range((month_end - month_start).days + 1)
-        if (month_start + datetime.timedelta(days=i)).weekday() < 5
+        if is_working_day(month_start + datetime.timedelta(days=i))
     )
 
     logs = AttendanceLog.objects.filter(
@@ -451,3 +454,345 @@ def attendance_monthly_report(request):
             ) if records else 0,
         },
     })
+
+
+# ── Regularization ────────────────────────────────────────────────────────────
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def my_regularization_view(request):
+    """
+    GET  /api/attendance/regularization/      — employee: list own requests
+    POST /api/attendance/regularization/      — employee: submit new request
+    """
+    try:
+        employee = request.user.employee_profile
+    except Exception:
+        return Response({'detail': 'No employee profile.'}, status=400)
+
+    if request.method == 'GET':
+        reqs = AttendanceRegularization.objects.filter(employee=employee)
+        return Response(AttendanceRegularizationSerializer(reqs, many=True).data)
+
+    serializer = AttendanceRegularizationSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=400)
+
+    # Prevent duplicate request for same date
+    date = serializer.validated_data['date']
+    if AttendanceRegularization.objects.filter(employee=employee, date=date).exists():
+        return Response({'detail': 'A request for this date already exists.'}, status=400)
+
+    reg = serializer.save(employee=employee)
+
+    # Notify managers
+    _notify_managers_regularization(reg)
+
+    return Response(AttendanceRegularizationSerializer(reg).data, status=201)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsManagerOrAbove])
+def admin_regularization_list(request):
+    """GET /api/attendance/regularization/admin/ — manager: all pending requests."""
+    status_p = request.query_params.get('status', 'pending')
+    reqs = AttendanceRegularization.objects.select_related(
+        'employee', 'employee__user', 'reviewed_by'
+    ).filter(status=status_p).order_by('-created_at')
+    return Response(AttendanceRegularizationSerializer(reqs, many=True).data)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated, IsManagerOrAbove])
+def review_regularization(request, pk):
+    """PATCH /api/attendance/regularization/<pk>/review/ — approve or reject."""
+    try:
+        reg = AttendanceRegularization.objects.select_related('employee').get(pk=pk)
+    except AttendanceRegularization.DoesNotExist:
+        return Response({'detail': 'Not found.'}, status=404)
+
+    action      = request.data.get('action')   # 'approve' or 'reject'
+    review_note = request.data.get('review_note', '')
+
+    if action not in ('approve', 'reject'):
+        return Response({'detail': 'action must be approve or reject.'}, status=400)
+
+    reg.status      = 'approved' if action == 'approve' else 'rejected'
+    reg.reviewed_by = request.user
+    reg.reviewed_at = timezone.now()
+    reg.review_note = review_note
+    reg.save()
+
+    # If approved → create/update the attendance log
+    if action == 'approve':
+        _apply_regularization(reg)
+
+    # Notify the employee
+    _notify_employee_regularization(reg)
+
+    return Response(AttendanceRegularizationSerializer(reg).data)
+
+
+def _apply_regularization(reg):
+    """Create or patch the AttendanceLog when a regularization is approved."""
+    employee = reg.employee
+    log, _ = AttendanceLog.objects.get_or_create(
+        employee=employee, date=reg.date,
+        defaults={'status': AttendanceLog.Status.ABSENT}
+    )
+
+    if reg.requested_login_time:
+        aware_login = timezone.make_aware(
+            datetime.datetime.combine(reg.date, reg.requested_login_time)
+        )
+        log.login_time = aware_login
+        log.auto_set_status()
+
+    if reg.requested_logout_time:
+        aware_logout = timezone.make_aware(
+            datetime.datetime.combine(reg.date, reg.requested_logout_time)
+        )
+        log.logout_time = aware_logout
+
+    log.is_regularized = True
+    log.notes = f"Regularized: {reg.reason}"
+    log.save()
+
+
+def _notify_managers_regularization(reg):
+    """Send in-app notification to all managers about a new regularization request."""
+    try:
+        from apps.notifications.models import Notification
+        from apps.authentication.models import User
+        managers = User.objects.filter(role__in=['manager', 'hr', 'admin', 'founder'])
+        for mgr in managers:
+            Notification.objects.create(
+                recipient=mgr,
+                title='Attendance Regularization Request',
+                message=f"{reg.employee.full_name} requested attendance correction for {reg.date}.",
+                type='system',
+                priority='normal',
+                link='/attendance',
+            )
+    except Exception:
+        pass
+
+
+def _notify_employee_regularization(reg):
+    """Notify employee about regularization decision."""
+    try:
+        from apps.notifications.models import Notification
+        action = 'approved' if reg.status == 'approved' else 'rejected'
+        Notification.objects.create(
+            recipient=reg.employee.user,
+            title=f'Attendance Regularization {action.capitalize()}',
+            message=f'Your regularization request for {reg.date} has been {action}.',
+            type='system',
+            priority='normal',
+            link='/my-attendance',
+        )
+    except Exception:
+        pass
+
+
+# ── Attendance Score & Streak ─────────────────────────────────────────────────
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_score_view(request):
+    """GET /api/attendance/my-score/ — employee's score, streak, weekly summary."""
+    try:
+        employee = request.user.employee_profile
+    except Exception:
+        return Response({'detail': 'No employee profile.'}, status=400)
+
+    # Streak
+    streak, _ = AttendanceStreak.objects.get_or_create(employee=employee)
+
+    # This month stats
+    today       = datetime.date.today()
+    month_start = today.replace(day=1)
+    import calendar as cal_mod
+    month_end   = today.replace(day=cal_mod.monthrange(today.year, today.month)[1])
+    working_days = sum(
+        1 for i in range((month_end - month_start).days + 1)
+        if is_working_day(month_start + datetime.timedelta(days=i))
+    )
+    passed_working_days = sum(
+        1 for i in range((today - month_start).days + 1)
+        if is_working_day(month_start + datetime.timedelta(days=i))
+    )
+
+    logs = AttendanceLog.objects.filter(employee=employee, date__gte=month_start, date__lte=today)
+    present_days = logs.filter(status__in=['present', 'late', 'half_day', 'overtime']).count()
+    late_days    = logs.filter(status='late').count()
+    absent_days  = max(0, passed_working_days - present_days)
+    total_hours  = sum(float(l.total_work_hours) for l in logs)
+    overtime_hrs = sum(float(l.overtime_hours) for l in logs)
+
+    attendance_score  = round(present_days / passed_working_days * 100, 1) if passed_working_days else 100
+    punctuality_score = round((present_days - late_days) / present_days * 100, 1) if present_days else 100
+
+    # This week summary (Mon–Sat)
+    week_start  = today - datetime.timedelta(days=today.weekday())
+    week_logs   = AttendanceLog.objects.filter(employee=employee, date__gte=week_start, date__lte=today)
+    week_days   = []
+    for offset in range(6):  # Mon–Sat
+        day     = week_start + datetime.timedelta(days=offset)
+        day_log = next((l for l in week_logs if l.date == day), None)
+        week_days.append({
+            'date':   str(day),
+            'day':    day.strftime('%a'),
+            'status': day_log.status if day_log else ('weekend' if day.weekday() == 6 else 'absent'),
+            'hours':  float(day_log.total_work_hours) if day_log else 0,
+            'login':  AttendanceLogSerializer._fmt(day_log.login_time) if day_log else None,
+            'overtime': float(day_log.overtime_hours) if day_log else 0,
+        })
+
+    return Response({
+        'streak': {
+            'current':  streak.current_streak,
+            'longest':  streak.longest_streak,
+            'total_on_time': streak.total_on_time,
+            'total_late':    streak.total_late,
+        },
+        'month': {
+            'working_days':       working_days,
+            'passed_working_days': passed_working_days,
+            'present_days':       present_days,
+            'late_days':          late_days,
+            'absent_days':        absent_days,
+            'total_hours':        round(total_hours, 2),
+            'overtime_hours':     round(overtime_hrs, 2),
+            'attendance_score':   attendance_score,
+            'punctuality_score':  punctuality_score,
+        },
+        'this_week': week_days,
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsManagerOrAbove])
+def leaderboard_view(request):
+    """GET /api/attendance/leaderboard/ — top punctual employees this month."""
+    from apps.employees.models import Employee
+
+    today       = datetime.date.today()
+    month_start = today.replace(day=1)
+
+    streaks = AttendanceStreak.objects.select_related(
+        'employee', 'employee__user', 'employee__department'
+    ).all()
+
+    records = []
+    for s in streaks:
+        total = s.total_on_time + s.total_late
+        score = round(s.total_on_time / total * 100, 1) if total else 100
+        records.append({
+            'employee_id':   s.employee.id,
+            'employee_name': s.employee.full_name,
+            'employee_code': s.employee.employee_id,
+            'department':    s.employee.department.name if s.employee.department else None,
+            'profile_photo': s.employee.profile_photo.url if s.employee.profile_photo else None,
+            'current_streak': s.current_streak,
+            'longest_streak': s.longest_streak,
+            'punctuality_score': score,
+        })
+
+    records.sort(key=lambda r: (-r['punctuality_score'], -r['current_streak']))
+    return Response({'leaderboard': records[:20]})
+
+
+# ── Anomaly Detection ─────────────────────────────────────────────────────────
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsManagerOrAbove])
+def anomaly_alerts_view(request):
+    """
+    GET /api/attendance/anomalies/
+    Returns employees with suspicious attendance patterns in the last 30 days.
+    """
+    from apps.employees.models import Employee
+
+    today       = datetime.date.today()
+    window_start = today - datetime.timedelta(days=30)
+
+    logs = AttendanceLog.objects.filter(
+        date__gte=window_start
+    ).select_related('employee', 'employee__user')
+
+    emp_logs: dict = {}
+    for log in logs:
+        emp_logs.setdefault(log.employee_id, []).append(log)
+
+    alerts = []
+    for emp_id, emp_day_logs in emp_logs.items():
+        employee = emp_day_logs[0].employee
+        flags    = []
+
+        # Flag 1: 3+ late arrivals in last 7 days
+        week_ago = today - datetime.timedelta(days=7)
+        late_this_week = [l for l in emp_day_logs if l.status == 'late' and l.date >= week_ago]
+        if len(late_this_week) >= 3:
+            flags.append({'type': 'frequent_late', 'detail': f'{len(late_this_week)} late days in last 7 days'})
+
+        # Flag 2: 5+ absences in last 30 days
+        absent_logs = [l for l in emp_day_logs if l.status == 'absent']
+        if len(absent_logs) >= 5:
+            flags.append({'type': 'frequent_absent', 'detail': f'{len(absent_logs)} absences in last 30 days'})
+
+        # Flag 3: Check-in within 1 min of 10:15 AM threshold for 5+ days (gaming)
+        gaming_days = 0
+        for l in emp_day_logs:
+            if l.login_time:
+                local = timezone.localtime(l.login_time)
+                # Login between 10:00 and 10:15 exactly (suspiciously precise)
+                if local.hour == 10 and 0 <= local.minute <= 14:
+                    gaming_days += 1
+        if gaming_days >= 5:
+            flags.append({'type': 'threshold_gaming', 'detail': f'Logged in exactly before threshold {gaming_days} times'})
+
+        # Flag 4: No checkout 3+ times in last 7 days
+        no_checkout = [l for l in emp_day_logs if l.login_time and not l.logout_time and l.date >= week_ago]
+        if len(no_checkout) >= 3:
+            flags.append({'type': 'missing_checkout', 'detail': f'Missing checkout {len(no_checkout)} times this week'})
+
+        if flags:
+            alerts.append({
+                'employee_id':   employee.id,
+                'employee_name': employee.full_name,
+                'employee_code': employee.employee_id,
+                'department':    employee.department.name if employee.department else None,
+                'profile_photo': employee.profile_photo.url if employee.profile_photo else None,
+                'flags': flags,
+            })
+
+    return Response({'alerts': alerts, 'total': len(alerts)})
+
+
+# ── Auto Absent (called by management command) ────────────────────────────────
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsManagerOrAbove])
+def trigger_auto_absent(request):
+    """POST /api/attendance/auto-absent/ — manually trigger auto-absent marking."""
+    count = _mark_absent_for_date(datetime.date.today())
+    return Response({'marked_absent': count})
+
+
+def _mark_absent_for_date(date):
+    """Mark all employees without a check-in on a given working day as absent."""
+    if not is_working_day(date):
+        return 0
+    from apps.employees.models import Employee
+    employees    = Employee.objects.all()
+    existing_ids = set(AttendanceLog.objects.filter(date=date).values_list('employee_id', flat=True))
+    count = 0
+    for emp in employees:
+        if emp.id not in existing_ids:
+            AttendanceLog.objects.create(
+                employee=emp, date=date, status=AttendanceLog.Status.ABSENT,
+                notes='Auto-marked absent by system'
+            )
+            count += 1
+    return count
