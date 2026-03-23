@@ -81,10 +81,13 @@ export function useActivityFeed() {
 }
 
 export function useNotificationSocket() {
-  const wsRef = useRef(null)
+  const wsRef              = useRef(null)
+  const reconnectTimerRef  = useRef(null)
+  const notifCallbackRef   = useRef(null)   // callback for regular notifications
+  const syncCallbackRef    = useRef(null)   // callback for data_sync events
   const { isAuthenticated, accessToken } = useAuthStore()
 
-  const onNotification = useCallback((callback) => {
+  const connect = useCallback(() => {
     if (!isAuthenticated || !accessToken) return
 
     const url = `${WS_BASE}/ws/notifications/?token=${accessToken}`
@@ -95,19 +98,45 @@ export function useNotificationSocket() {
       try {
         const msg = JSON.parse(event.data)
         if (msg.type === 'new_notification') {
-          callback(msg.data)
+          const data = msg.data
+          if (data?.msg_type === 'data_sync') {
+            // Route to data_sync handler (web + Android WebView bridge)
+            syncCallbackRef.current?.(data)
+          } else {
+            // Regular user-visible notification
+            notifCallbackRef.current?.(data)
+          }
         }
       } catch (e) {}
     }
 
-    ws.onclose = () => setTimeout(() => onNotification(callback), 5000)
+    ws.onclose = () => {
+      reconnectTimerRef.current = setTimeout(connect, 5000)
+    }
   }, [isAuthenticated, accessToken])
 
   useEffect(() => {
-    return () => {
-      if (wsRef.current) wsRef.current.close()
+    connect()
+    // Expose native bridge callback for Android WebView
+    window.__crmSyncCallback = (resourceType, resourceId, action) => {
+      syncCallbackRef.current?.({ resource_type: resourceType, resource_id: resourceId, action })
     }
+    return () => {
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
+      if (wsRef.current) wsRef.current.close()
+      delete window.__crmSyncCallback
+    }
+  }, [connect])
+
+  /** Register a callback for regular user-visible notifications */
+  const onNotification = useCallback((callback) => {
+    notifCallbackRef.current = callback
   }, [])
 
-  return { onNotification }
+  /** Register a callback for data_sync events (auto-refresh triggers) */
+  const onDataSync = useCallback((callback) => {
+    syncCallbackRef.current = callback
+  }, [])
+
+  return { onNotification, onDataSync }
 }

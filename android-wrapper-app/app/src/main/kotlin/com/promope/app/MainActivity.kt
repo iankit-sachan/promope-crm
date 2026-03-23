@@ -1,7 +1,10 @@
 package com.promope.app
 
 import android.Manifest
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -22,6 +25,27 @@ class MainActivity : AppCompatActivity() {
     private lateinit var retryButton: Button
 
     private val APP_URL = "https://team.promope.site"
+
+    /**
+     * Receives DATA_SYNC broadcasts from ChatNotificationService (native WS layer).
+     * Calls window.__crmSyncCallback in the WebView so React Query can invalidate
+     * the relevant cache key and silently refetch — giving instant UI updates.
+     */
+    private val dataSyncReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action != "com.promope.app.DATA_SYNC") return
+            val resourceType = intent.getStringExtra("resource_type") ?: return
+            val resourceId   = intent.getIntExtra("resource_id", -1)
+            val action       = intent.getStringExtra("action") ?: "updated"
+            webView.post {
+                webView.evaluateJavascript(
+                    "(function(){if(window.__crmSyncCallback)" +
+                    "window.__crmSyncCallback('$resourceType',$resourceId,'$action');})();",
+                    null
+                )
+            }
+        }
+    }
 
     // ── Lifecycle ──────────────────────────────────────────────────────────
 
@@ -57,6 +81,9 @@ class MainActivity : AppCompatActivity() {
 
         // Handle deep-link intent that launched this Activity
         handleChatDeepLink(intent)
+
+        // Listen for data_sync broadcasts from ChatNotificationService
+        registerReceiver(dataSyncReceiver, IntentFilter("com.promope.app.DATA_SYNC"))
     }
 
     /** Called when Activity is already running and a new Intent arrives (singleTop). */
@@ -266,6 +293,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     // ── WebView state save/restore ─────────────────────────────────────────
+
+    override fun onDestroy() {
+        unregisterReceiver(dataSyncReceiver)
+        super.onDestroy()
+    }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)

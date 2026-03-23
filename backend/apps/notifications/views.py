@@ -2,7 +2,7 @@ from rest_framework import generics, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from .models import Notification
+from .models import Notification, AppVersion
 from .serializers import NotificationSerializer
 
 
@@ -48,3 +48,29 @@ def unread_count(request):
     """GET /api/notifications/unread-count/"""
     count = Notification.objects.filter(recipient=request.user, is_read=False).count()
     return Response({'count': count})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def app_version(request):
+    """
+    GET /api/notifications/app-version/?platform=android
+    Returns the latest published app version metadata.
+    Mobile app checks this on startup to prompt for updates.
+    """
+    platform = request.query_params.get('platform', 'android')
+    try:
+        v = AppVersion.objects.filter(platform=platform).latest()
+    except AppVersion.DoesNotExist:
+        return Response({
+            'version_code': 0,
+            'version_name': '1.0',
+            'force_update': False,
+            'release_notes': '',
+        })
+    return Response({
+        'version_code':  v.version_code,
+        'version_name':  v.version_name,
+        'force_update':  v.force_update,
+        'release_notes': v.release_notes,
+    })

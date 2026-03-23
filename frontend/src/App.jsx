@@ -53,6 +53,7 @@ import RemoteControlPage from './pages/RemoteControlPage'
 
 // Activity Tracking pages
 import ActivityMonitorDashboard from './pages/ActivityMonitorDashboard'
+import { useAppVersion } from './hooks/useAppVersion'
 import DailyReportPage          from './pages/DailyReportPage'
 import ActivityLogsPage         from './pages/ActivityLogsPage'
 import TimeTrackingPage         from './pages/TimeTrackingPage'
@@ -86,6 +87,9 @@ export default function App() {
 
   // Auto-log page visits to activity feed when authenticated
   useActivityTracker()
+
+  // Check for new app version (only acts when running inside Android WebView)
+  useAppVersion()
 
   return (
     <Routes>

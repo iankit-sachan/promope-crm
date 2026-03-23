@@ -8,6 +8,9 @@ import android.os.IBinder
 import android.os.Looper
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
+import okhttp3.WebSocket
+import okhttp3.WebSocketListener
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
@@ -17,29 +20,33 @@ import java.util.concurrent.TimeUnit
 /**
  * ChatNotificationService — background foreground service.
  *
- * Polls `/api/chat/conversations/` every [POLL_INTERVAL_MS] milliseconds
- * using the JWT stored in SharedPreferences by [ChatBridge].
+ * Runs two parallel real-time channels:
  *
- * When it detects a conversation whose `unread_count` has grown since the
- * last snapshot, it fires a heads-up notification via [NotificationHelper]
- * and updates the launcher-icon badge.
+ * 1. HTTP polling (every 30s) → /api/chat/conversations/
+ *    Fires heads-up notifications for new unread chat messages (unchanged logic).
+ *
+ * 2. OkHttp WebSocket → wss://team.promope.site/ws/notifications/?token=<jwt>
+ *    Receives data_sync envelopes and broadcasts them so MainActivity can
+ *    call window.__crmSyncCallback() inside the WebView for instant UI refresh.
+ *    Also handles regular CRM notifications (task assigned, etc.).
  *
  * Lifecycle:
- *  START → [ChatBridge.setAuthToken()] or [MainActivity] on page load
- *  STOP  → [ChatBridge.clearAuthToken()] on logout, or 401 response
+ *  START → ChatBridge.setAuthToken() or MainActivity on page load
+ *  STOP  → ChatBridge.clearAuthToken() on logout, or 401 response
  */
 class ChatNotificationService : Service() {
 
     companion object {
-        private const val PREFS_NAME          = "prefs_chat"
-        private const val PREFS_SNAPSHOT      = "prefs_chat_snapshot"
-        private const val KEY_JWT             = "jwt_token"
-        private const val POLL_INTERVAL_MS    = 30_000L   // 30 seconds
-        private const val BASE_URL            = "https://team.promope.site"
+        private const val PREFS_NAME       = "prefs_chat"
+        private const val PREFS_SNAPSHOT   = "prefs_chat_snapshot"
+        private const val KEY_JWT          = "jwt_token"
+        private const val POLL_INTERVAL_MS = 30_000L        // chat poll: 30 seconds
+        private const val WS_RECONNECT_MS  = 10_000L        // WS reconnect: 10 seconds
+        private const val BASE_URL         = "https://team.promope.site"
+        private const val WS_URL           = "wss://team.promope.site/ws/notifications/"
     }
 
-    // ── Internals ──────────────────────────────────────────────────────────
-
+    // ── HTTP client for chat polling ───────────────────────────────────────
     private val handler   = Handler(Looper.getMainLooper())
     private val executor  = Executors.newSingleThreadExecutor()
     private val httpClient = OkHttpClient.Builder()
@@ -47,6 +54,14 @@ class ChatNotificationService : Service() {
         .readTimeout(15, TimeUnit.SECONDS)
         .build()
 
+    // ── WebSocket client for real-time sync notifications ─────────────────
+    private val wsClient = OkHttpClient.Builder()
+        .readTimeout(0, TimeUnit.MILLISECONDS)   // no timeout — long-lived connection
+        .pingInterval(30, TimeUnit.SECONDS)       // auto keepalive ping
+        .build()
+    private var webSocket: WebSocket? = null
+
+    // ── Chat poll runnable (unchanged from original) ───────────────────────
     private val pollRunnable = object : Runnable {
         override fun run() {
             executor.execute { doPoll() }
@@ -65,21 +80,97 @@ class ChatNotificationService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Run first poll immediately, then every POLL_INTERVAL_MS
+        // (Re-)start chat polling
         handler.removeCallbacks(pollRunnable)
         handler.post(pollRunnable)
-        return START_STICKY   // restart if killed by OS
+        // Connect notification WebSocket
+        connectNotificationWs()
+        return START_STICKY
     }
 
     override fun onDestroy() {
         handler.removeCallbacks(pollRunnable)
         executor.shutdownNow()
+        webSocket?.close(1000, "Service stopping")
+        wsClient.dispatcher.executorService.shutdown()
         super.onDestroy()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    // ── Polling logic ──────────────────────────────────────────────────────
+    // ── Notification WebSocket ─────────────────────────────────────────────
+
+    private fun connectNotificationWs() {
+        val jwt = getJwt() ?: return   // no token yet — will reconnect when token arrives
+
+        val request = Request.Builder()
+            .url("$WS_URL?token=$jwt")
+            .build()
+
+        webSocket = wsClient.newWebSocket(request, object : WebSocketListener() {
+
+            override fun onOpen(ws: WebSocket, response: Response) {
+                // Connected — nothing to do, server sends initial unread count
+            }
+
+            override fun onMessage(ws: WebSocket, text: String) {
+                handleWsMessage(text)
+            }
+
+            override fun onFailure(ws: WebSocket, t: Throwable, response: Response?) {
+                // Network error — schedule reconnect
+                handler.postDelayed({ connectNotificationWs() }, WS_RECONNECT_MS)
+            }
+
+            override fun onClosed(ws: WebSocket, code: Int, reason: String) {
+                if (code == 4001) {
+                    // JWT invalid — stop service (same behaviour as 401 in HTTP polling)
+                    stopSelf()
+                } else {
+                    handler.postDelayed({ connectNotificationWs() }, WS_RECONNECT_MS)
+                }
+            }
+        })
+    }
+
+    /**
+     * Route an incoming WS text frame.
+     *
+     * Frame shape from NotificationConsumer:
+     *   { "type": "new_notification", "data": { ... } }
+     *
+     * data.msg_type = "data_sync" → broadcast Intent for MainActivity to relay to WebView
+     * data.msg_type = anything else → show native CRM notification
+     */
+    private fun handleWsMessage(text: String) {
+        try {
+            val msg = JSONObject(text)
+            if (msg.optString("type") != "new_notification") return
+
+            val data    = msg.getJSONObject("data")
+            val msgType = data.optString("msg_type", "")
+
+            if (msgType == "data_sync") {
+                // Tell MainActivity to call window.__crmSyncCallback() in the WebView
+                val broadcastIntent = Intent("com.promope.app.DATA_SYNC").apply {
+                    putExtra("resource_type", data.optString("resource_type", ""))
+                    putExtra("resource_id",   data.optInt("resource_id", -1))
+                    putExtra("action",        data.optString("action", "updated"))
+                }
+                sendBroadcast(broadcastIntent)
+            } else {
+                // Regular CRM notification (task assigned, etc.)
+                val title   = data.optString("title",   "CRM Update")
+                val message = data.optString("message", "")
+                val notifId = data.optInt("id",  (System.currentTimeMillis() % Int.MAX_VALUE).toInt())
+                NotificationHelper.postChatNotification(this, title, message, notifId)
+            }
+        } catch (e: Exception) {
+            // Malformed JSON — ignore silently
+        }
+    }
+
+    // ── Chat HTTP polling (unchanged from original) ────────────────────────
 
     private fun doPoll() {
         val jwt = getJwt() ?: run { stopSelf(); return }
@@ -94,11 +185,10 @@ class ChatNotificationService : Service() {
             httpClient.newCall(request).execute().use { response ->
                 when {
                     response.code == 401 -> {
-                        // Token expired or revoked — stop polling
                         stopSelf()
                         return
                     }
-                    !response.isSuccessful -> return   // transient error — retry next cycle
+                    !response.isSuccessful -> return
 
                     else -> {
                         val body = response.body?.string() ?: return
@@ -111,17 +201,9 @@ class ChatNotificationService : Service() {
         }
     }
 
-    /**
-     * Parse the conversations JSON, compare against the last snapshot,
-     * and fire notifications for any newly-unread conversations.
-     *
-     * The API may return:
-     *  • A raw JSON array: `[{id, other_participant, unread_count, ...}, ...]`
-     *  • A paginated object: `{count, results: [...]}`
-     */
     private fun processConversations(body: String) {
-        val snapshot  = loadSnapshot()
-        val newSnapshot = mutableMapOf<Int, Int>()     // convId → unread_count
+        val snapshot    = loadSnapshot()
+        val newSnapshot = mutableMapOf<Int, Int>()
         var totalUnread = 0
 
         val array: JSONArray = try {
@@ -132,21 +214,18 @@ class ChatNotificationService : Service() {
         }
 
         for (i in 0 until array.length()) {
-            val conv        = array.getJSONObject(i)
-            val convId      = conv.getInt("id")
-            val unread      = conv.optInt("unread_count", 0)
-            val prevUnread  = snapshot[convId] ?: 0
+            val conv       = array.getJSONObject(i)
+            val convId     = conv.getInt("id")
+            val unread     = conv.optInt("unread_count", 0)
+            val prevUnread = snapshot[convId] ?: 0
 
             newSnapshot[convId] = unread
             totalUnread += unread
 
-            // Only notify if unread grew (not just any non-zero value)
             if (unread > prevUnread) {
                 val senderName  = getSenderName(conv)
                 val lastMessage = getLastMessagePreview(conv)
-                NotificationHelper.postChatNotification(
-                    this, senderName, lastMessage, convId
-                )
+                NotificationHelper.postChatNotification(this, senderName, lastMessage, convId)
             }
         }
 
@@ -162,13 +241,8 @@ class ChatNotificationService : Service() {
         return if (token.isNullOrBlank()) null else token
     }
 
-    /**
-     * Derive a human-readable sender name from the conversation object.
-     * Handles the `other_participant` nested object returned by the API.
-     */
     private fun getSenderName(conv: JSONObject): String {
         return try {
-            // API returns "other_user" object (not "other_participant")
             val participant = conv.optJSONObject("other_user")
                 ?: conv.optJSONObject("other_participant")
             participant?.optString("full_name")?.takeIf { it.isNotBlank() }
@@ -177,7 +251,6 @@ class ChatNotificationService : Service() {
         } catch (e: Exception) { "New message" }
     }
 
-    /** Extract last message text from the conversation object. */
     private fun getLastMessagePreview(conv: JSONObject): String {
         return try {
             val last = conv.optJSONObject("last_message")

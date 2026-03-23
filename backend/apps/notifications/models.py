@@ -49,3 +49,26 @@ class Notification(models.Model):
         self.is_read = True
         self.read_at = timezone.now()
         self.save(update_fields=['is_read', 'read_at'])
+
+
+class AppVersion(models.Model):
+    """
+    Tracks the latest published Android (or iOS) app version.
+    HR/Founder creates a new row each time a new APK is released.
+    The mobile app checks this on startup and prompts users to update.
+    """
+    platform      = models.CharField(max_length=20, default='android')
+    version_name  = models.CharField(max_length=20)   # e.g. "1.2"
+    version_code  = models.IntegerField()              # e.g. 3 (matches build.gradle versionCode)
+    release_notes = models.TextField(blank=True)
+    force_update  = models.BooleanField(default=False) # True = user must update before using app
+    created_at    = models.DateTimeField(auto_now_add=True)
+    updated_at    = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'app_versions'
+        ordering = ['-version_code']
+        get_latest_by = 'version_code'
+
+    def __str__(self):
+        return f'{self.platform} v{self.version_name} (build {self.version_code})'

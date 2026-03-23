@@ -31,6 +31,12 @@ def log_activity(actor, verb, description, target_type='', target_id=None,
 
     # Broadcast to WebSocket channel group
     _broadcast_activity(log)
+
+    # Broadcast data_sync to all online users so web + mobile auto-refresh
+    if verb in _VERB_SYNC_MAP:
+        resource_type, action = _VERB_SYNC_MAP[verb]
+        broadcast_data_sync(resource_type=resource_type, resource_id=target_id, action=action)
+
     return log
 
 
@@ -73,3 +79,57 @@ def send_notification_ws(user_id, notification_data):
         )
     except Exception as e:
         logger.warning(f'Notification WebSocket broadcast failed: {e}')
+
+
+# Maps log_activity() verb → (resource_type, action) for data_sync broadcasts
+_VERB_SYNC_MAP = {
+    'task_created':      ('task',      'created'),
+    'task_assigned':     ('task',      'updated'),
+    'task_started':      ('task',      'updated'),
+    'task_updated':      ('task',      'updated'),
+    'task_completed':    ('task',      'updated'),
+    'task_delayed':      ('task',      'updated'),
+    'task_cancelled':    ('task',      'deleted'),
+    'employee_added':    ('employee',  'created'),
+    'employee_updated':  ('employee',  'updated'),
+    'employee_deleted':  ('employee',  'deleted'),
+    'salary_updated':    ('salary',    'updated'),
+    'salary_paid':       ('salary',    'updated'),
+    'payslip_generated': ('payslip',   'created'),
+    'progress_updated':  ('task',      'updated'),
+}
+
+
+def broadcast_data_sync(resource_type, resource_id=None, action='updated'):
+    """
+    Push a lightweight data_sync envelope to every online user's notification WS group.
+    The frontend (web + Android WebView) receives this and calls
+    queryClient.invalidateQueries() for the relevant cache key — triggering an
+    instant silent refetch without any visible loading state.
+
+    resource_type: 'task' | 'employee' | 'attendance' | 'salary' | 'payslip'
+    resource_id:   optional PK of the changed object
+    action:        'created' | 'updated' | 'deleted'
+    """
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+
+    payload = {
+        'type': 'notification_message',
+        'data': {
+            'msg_type':      'data_sync',
+            'resource_type': resource_type,
+            'resource_id':   resource_id,
+            'action':        action,
+        }
+    }
+    try:
+        channel_layer = get_channel_layer()
+        # Only broadcast to users currently marked online — avoids blasting dead groups
+        user_ids = list(
+            User.objects.filter(is_active=True, is_online=True).values_list('id', flat=True)
+        )
+        for uid in user_ids:
+            async_to_sync(channel_layer.group_send)(f'notifications_{uid}', payload)
+    except Exception as e:
+        logger.warning(f'data_sync broadcast failed: {e}')

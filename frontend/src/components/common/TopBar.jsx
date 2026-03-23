@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell, Search, X, Menu } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { notificationService } from '../../services/api'
 import { timeAgo } from '../../utils/helpers'
 import { useAuthStore } from '../../store/authStore'
+import { useNotificationSocket } from '../../hooks/useWebSocket'
 import clsx from 'clsx'
 
 export default function TopBar({ onToggleSidebar, sidebarOpen }) {
@@ -14,6 +15,27 @@ export default function TopBar({ onToggleSidebar, sidebarOpen }) {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const { user } = useAuthStore()
+  const { onNotification, onDataSync } = useNotificationSocket()
+
+  // Real-time: invalidate affected cache keys when admin makes changes
+  const handleDataSync = useCallback(({ resource_type }) => {
+    const keyMap = {
+      task:       ['tasks'],
+      employee:   ['employees'],
+      attendance: ['attendance-today', 'attendance-my'],
+      salary:     ['salary'],
+      payslip:    ['payslips'],
+    }
+    keyMap[resource_type]?.forEach(k => qc.invalidateQueries({ queryKey: [k] }))
+  }, [qc])
+
+  useEffect(() => {
+    onNotification(() => {
+      qc.invalidateQueries({ queryKey: ['notifications'] })
+      qc.invalidateQueries({ queryKey: ['notifications-count'] })
+    })
+    onDataSync(handleDataSync)
+  }, [onNotification, onDataSync, handleDataSync, qc])
 
   // Close notification panel when clicking outside
   useEffect(() => {
