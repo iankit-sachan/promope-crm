@@ -4,7 +4,7 @@ import {
   CalendarDays, Download, AlertTriangle, Trophy,
   FileEdit, CheckCircle, XCircle, Clock, Flame,
 } from 'lucide-react'
-import { hrService, employeeService, departmentService, api } from '../../services/api'
+import api, { hrService, employeeService, departmentService } from '../../services/api'
 import clsx from 'clsx'
 import toast from 'react-hot-toast'
 
