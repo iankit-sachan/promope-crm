@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { dailyReportService } from '../../services/api'
+import api, { dailyReportService } from '../../services/api'
 import { formatDate } from '../../utils/helpers'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
-import { FileText, Upload, CheckCircle, Clock, Eye, Paperclip } from 'lucide-react'
+import { FileText, Upload, CheckCircle, Clock, Paperclip, X, Image } from 'lucide-react'
 
 const today = new Date().toISOString().split('T')[0]
 
@@ -27,7 +27,7 @@ const EMPTY_FORM = {
 export default function DailyReportForm() {
   const qc = useQueryClient()
   const [form, setForm]         = useState(EMPTY_FORM)
-  const [attachment, setAttachment] = useState(null)
+  const [newFiles, setNewFiles]     = useState([])
   const [existingReport, setExistingReport] = useState(null)
 
   // Load today's existing report
@@ -59,8 +59,21 @@ export default function DailyReportForm() {
   const buildFormData = () => {
     const fd = new FormData()
     Object.entries(form).forEach(([k, v]) => { if (v !== '') fd.append(k, v) })
-    if (attachment) fd.append('attachment', attachment)
+    newFiles.forEach(f => fd.append('attachments', f))
     return fd
+  }
+
+  const removeNewFile = (idx) => setNewFiles(prev => prev.filter((_, i) => i !== idx))
+
+  const handleDeleteAttachment = async (id) => {
+    try {
+      await api.delete(`/daily-reports/attachments/${id}/`)
+      qc.invalidateQueries({ queryKey: ['daily-report-today'] })
+      qc.invalidateQueries({ queryKey: ['my-daily-reports'] })
+      toast.success('Attachment removed')
+    } catch {
+      toast.error('Failed to remove attachment')
+    }
   }
 
   // Save Draft
@@ -157,11 +170,23 @@ export default function DailyReportForm() {
         <SummaryItem label="Work Description" value={existingReport.work_description} />
         {existingReport.tasks_pending && <SummaryItem label="Pending Tasks" value={existingReport.tasks_pending} />}
         {existingReport.blockers && <SummaryItem label="Blockers / Issues" value={existingReport.blockers} />}
-        {existingReport.attachment_url && (
+        {/* Legacy single attachment */}
+        {existingReport.attachment_url && !(existingReport.attachments?.length) && (
           <a href={existingReport.attachment_url} target="_blank" rel="noreferrer"
             className="inline-flex items-center gap-2 text-sm text-indigo-400 hover:text-indigo-300">
             <Paperclip className="w-4 h-4" /> View Attachment
           </a>
+        )}
+        {/* New multi-attachments */}
+        {existingReport.attachments?.length > 0 && (
+          <div className="space-y-1">
+            {existingReport.attachments.map(att => (
+              <a key={att.id} href={att.url} target="_blank" rel="noreferrer"
+                className="inline-flex items-center gap-2 text-sm text-indigo-400 hover:text-indigo-300 block">
+                <Paperclip className="w-4 h-4" /> {att.filename || 'Attachment'}
+              </a>
+            ))}
+          </div>
         )}
 
         <div className="pt-2 border-t border-slate-700/50">
@@ -251,35 +276,84 @@ export default function DailyReportForm() {
         />
       </div>
 
-      {/* Attachment */}
-      <div>
-        <label className="label">Attachment <span className="text-slate-500">(optional)</span></label>
+      {/* Attachments */}
+      <div className="space-y-3">
+        <label className="label">Attachments <span className="text-slate-500">(optional)</span></label>
+
+        {/* Saved attachments */}
+        {existingReport?.attachments?.length > 0 && (
+          <div className="space-y-1.5">
+            {existingReport.attachments.map(att => (
+              <div key={att.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-slate-700/40 border border-slate-600/50">
+                <a href={att.url} target="_blank" rel="noreferrer"
+                  className="flex items-center gap-2 text-sm text-indigo-400 hover:text-indigo-300 truncate">
+                  <Paperclip className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="truncate">{att.filename || 'Attachment'}</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteAttachment(att.id)}
+                  disabled={isBusy}
+                  className="ml-2 text-slate-500 hover:text-red-400 flex-shrink-0 disabled:opacity-40"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        {/* Legacy single attachment */}
+        {existingReport?.attachment_url && !(existingReport?.attachments?.length) && (
+          <p className="text-xs text-slate-500 flex items-center gap-1">
+            <Paperclip className="w-3 h-3" />
+            Previously uploaded —
+            <a href={existingReport.attachment_url} target="_blank" rel="noreferrer" className="text-indigo-400 hover:underline ml-1">
+              View file
+            </a>
+          </p>
+        )}
+
+        {/* Staged new files */}
+        {newFiles.length > 0 && (
+          <div className="space-y-1.5">
+            {newFiles.map((f, i) => (
+              <div key={i} className="flex items-center justify-between px-3 py-2 rounded-lg bg-indigo-500/10 border border-indigo-500/30">
+                <span className="flex items-center gap-2 text-sm text-slate-300 truncate">
+                  <Image className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
+                  <span className="truncate">{f.name}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeNewFile(i)}
+                  disabled={isBusy}
+                  className="ml-2 text-slate-500 hover:text-red-400 flex-shrink-0 disabled:opacity-40"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Upload trigger */}
         <label className={clsx(
           'flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-dashed cursor-pointer transition-colors',
-          attachment
+          newFiles.length > 0
             ? 'border-indigo-500/50 bg-indigo-500/10'
             : 'border-slate-600 hover:border-slate-500 bg-slate-700/30',
           isBusy && 'opacity-50 cursor-not-allowed'
         )}>
           <Upload className="w-4 h-4 text-slate-400 flex-shrink-0" />
-          <span className="text-sm text-slate-400 truncate">
-            {attachment ? attachment.name : 'Click to upload a file (PDF, image, doc)'}
+          <span className="text-sm text-slate-400">
+            {newFiles.length > 0 ? `${newFiles.length} file(s) selected — click to add more` : 'Click to upload files (images, PDF, doc)'}
           </span>
           <input
-            type="file" className="hidden"
-            onChange={(e) => setAttachment(e.target.files[0] || null)}
+            type="file" multiple className="hidden"
+            accept="image/*,.pdf,.doc,.docx"
+            onChange={(e) => setNewFiles(prev => [...prev, ...Array.from(e.target.files)])}
             disabled={isBusy}
           />
         </label>
-        {existingReport?.attachment_url && !attachment && (
-          <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-            <Paperclip className="w-3 h-3" />
-            Previously uploaded —
-            <a href={existingReport.attachment_url} target="_blank" rel="noreferrer" className="text-indigo-400 hover:underline">
-              View file
-            </a>
-          </p>
-        )}
       </div>
 
       {/* Actions */}

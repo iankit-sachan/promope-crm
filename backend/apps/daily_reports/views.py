@@ -11,7 +11,7 @@ from apps.notifications.utils import create_notification
 from apps.authentication.models import User
 from apps.employees.models import Employee
 
-from .models import DailyReport
+from .models import DailyReport, DailyReportAttachment
 from .serializers import (
     DailyReportListSerializer,
     DailyReportDetailSerializer,
@@ -87,6 +87,9 @@ class DailyReportListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         report = serializer.save()
+        # Handle multiple file attachments
+        for f in self.request.FILES.getlist('attachments'):
+            DailyReportAttachment.objects.create(report=report, file=f, filename=f.name)
         log_activity(
             actor=self.request.user,
             verb='daily_report_submitted',
@@ -204,7 +207,11 @@ class DailyReportDetailView(generics.RetrieveUpdateAPIView):
                 {'detail': 'Reports can only be edited on the same day they were created and while status is Pending.'},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        return super().update(request, *args, **kwargs)
+        response = super().update(request, *args, **kwargs)
+        # Handle multiple file attachments on update
+        for f in request.FILES.getlist('attachments'):
+            DailyReportAttachment.objects.create(report=report, file=f, filename=f.name)
+        return response
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -353,3 +360,26 @@ def daily_report_analytics(request):
         'not_submitted_employees': list(not_submitted_employees),
         'hours_per_day': hours_per_day,
     })
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Attachment Delete
+# ──────────────────────────────────────────────────────────────────────────────
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_attachment(request, pk):
+    """DELETE /api/daily-reports/attachments/<pk>/  — remove a single attachment."""
+    try:
+        att = DailyReportAttachment.objects.select_related('report__employee').get(pk=pk)
+    except DailyReportAttachment.DoesNotExist:
+        return Response({'detail': 'Attachment not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Only the report owner or manager+ can delete
+    is_owner = att.report.employee.user_id == request.user.id
+    if not is_owner and not request.user.is_manager_or_above:
+        return Response({'detail': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
+
+    att.file.delete(save=False)
+    att.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)

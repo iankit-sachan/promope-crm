@@ -3,7 +3,12 @@ from django.utils import timezone
 
 
 def daily_report_attachment_path(instance, filename):
-    return f'daily_reports/{instance.report_date.year}/{instance.report_date.month:02d}/{instance.employee.employee_id}_{filename}'
+    # Works for both DailyReport (has report_date/employee) and DailyReportAttachment (has report FK)
+    if hasattr(instance, 'report'):
+        report = instance.report
+    else:
+        report = instance
+    return f'daily_reports/{report.report_date.year}/{report.report_date.month:02d}/{report.employee.employee_id}_{filename}'
 
 
 class DailyReport(models.Model):
@@ -56,3 +61,26 @@ class DailyReport(models.Model):
     def is_editable(self):
         """Employee can edit only if still pending and it's today's report."""
         return self.status == self.Status.PENDING and self.report_date == timezone.now().date()
+
+
+class DailyReportAttachment(models.Model):
+    """One row per uploaded file — allows multiple attachments per DailyReport."""
+    report      = models.ForeignKey(
+        DailyReport,
+        on_delete=models.CASCADE,
+        related_name='attachments',
+    )
+    file        = models.FileField(upload_to=daily_report_attachment_path)
+    filename    = models.CharField(max_length=255, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['uploaded_at']
+
+    def save(self, *args, **kwargs):
+        if not self.filename and self.file:
+            self.filename = self.file.name.split('/')[-1]
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f'{self.report} — {self.filename}'

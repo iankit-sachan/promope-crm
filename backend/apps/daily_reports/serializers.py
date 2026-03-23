@@ -1,7 +1,21 @@
 from rest_framework import serializers
 from django.utils import timezone
-from .models import DailyReport
+from .models import DailyReport, DailyReportAttachment
 from apps.employees.models import Employee
+
+
+class DailyReportAttachmentSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DailyReportAttachment
+        fields = ['id', 'filename', 'url', 'uploaded_at']
+
+    def get_url(self, obj):
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(obj.file.url)
+        return obj.file.url
 
 
 class EmployeeBriefSerializer(serializers.ModelSerializer):
@@ -19,6 +33,7 @@ class DailyReportListSerializer(serializers.ModelSerializer):
     department_name     = serializers.CharField(source='employee.department.name', read_only=True)
     reviewed_by_name    = serializers.CharField(source='reviewed_by.full_name', read_only=True)
     attachment_url      = serializers.SerializerMethodField()
+    attachments         = DailyReportAttachmentSerializer(many=True, read_only=True)
     is_editable         = serializers.BooleanField(read_only=True)
 
     class Meta:
@@ -28,7 +43,7 @@ class DailyReportListSerializer(serializers.ModelSerializer):
             'report_date', 'tasks_assigned', 'tasks_completed', 'tasks_pending',
             'hours_worked', 'work_description', 'blockers',
             'status', 'reviewed_by_name', 'review_note', 'reviewed_at',
-            'attachment_url', 'is_editable', 'created_at', 'updated_at',
+            'attachment_url', 'attachments', 'is_editable', 'created_at', 'updated_at',
         ]
 
     def get_attachment_url(self, obj):
@@ -45,6 +60,7 @@ class DailyReportDetailSerializer(serializers.ModelSerializer):
     employee_detail  = EmployeeBriefSerializer(source='employee', read_only=True)
     reviewed_by_name = serializers.CharField(source='reviewed_by.full_name', read_only=True)
     attachment_url   = serializers.SerializerMethodField()
+    attachments      = DailyReportAttachmentSerializer(many=True, read_only=True)
     is_editable      = serializers.BooleanField(read_only=True)
 
     class Meta:
@@ -53,6 +69,7 @@ class DailyReportDetailSerializer(serializers.ModelSerializer):
             'id', 'employee', 'employee_detail',
             'report_date', 'tasks_assigned', 'tasks_completed', 'tasks_pending',
             'hours_worked', 'work_description', 'blockers', 'attachment', 'attachment_url',
+            'attachments',
             'status', 'reviewed_by', 'reviewed_by_name', 'review_note', 'reviewed_at',
             'is_editable', 'created_at', 'updated_at',
         ]
