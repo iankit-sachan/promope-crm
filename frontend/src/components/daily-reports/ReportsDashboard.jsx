@@ -20,7 +20,7 @@ const today = new Date().toISOString().split('T')[0]
 
 export default function ReportsDashboard() {
   const qc = useQueryClient()
-  const [filters, setFilters] = useState({ status: '', date: today, employee: '', department: '' })
+  const [filters, setFilters] = useState({ status: '', date: '', employee: '', department: '' })
   const [reviewModal, setReviewModal] = useState(null) // { report, note }
   const [expanded, setExpanded]   = useState(null)
   const [showNotSubmitted, setShowNotSubmitted] = useState(false)
@@ -148,7 +148,20 @@ export default function ReportsDashboard() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
             <label className="label">Date</label>
-            <input type="date" value={filters.date} onChange={f('date')} className="input w-full" />
+            <div className="flex gap-2">
+              <input type="date" value={filters.date} onChange={f('date')} className="input flex-1" />
+              <button
+                onClick={() => setFilters(p => ({ ...p, date: p.date === today ? '' : today }))}
+                className={clsx(
+                  'px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap',
+                  filters.date === today
+                    ? 'bg-indigo-500/30 text-indigo-300 border border-indigo-500/40'
+                    : 'bg-slate-700 text-slate-400 hover:text-white border border-slate-600'
+                )}
+              >
+                Today
+              </button>
+            </div>
           </div>
           <div>
             <label className="label">Status</label>

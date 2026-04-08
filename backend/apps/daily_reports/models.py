@@ -49,7 +49,6 @@ class DailyReport(models.Model):
     updated_at       = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = [['employee', 'report_date']]
         ordering = ['-report_date', '-created_at']
         verbose_name = 'Daily Report'
         verbose_name_plural = 'Daily Reports'

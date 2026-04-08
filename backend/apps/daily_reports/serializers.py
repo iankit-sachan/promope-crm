@@ -99,18 +99,6 @@ class DailyReportCreateSerializer(serializers.ModelSerializer):
         today = timezone.now().date()
         if value != today:
             raise serializers.ValidationError('You can only create a report for today.')
-        # Guard against duplicate report for the same employee+date
-        request = self.context.get('request')
-        if request and request.method == 'POST':
-            try:
-                employee = request.user.employee_profile
-                if DailyReport.objects.filter(employee=employee, report_date=value).exists():
-                    raise serializers.ValidationError(
-                        'You have already submitted a report for today. Edit the existing one.'
-                    )
-            except Exception as exc:
-                if isinstance(exc, serializers.ValidationError):
-                    raise
         return value
 
     def validate_hours_worked(self, value):
