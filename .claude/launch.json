@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "Django Backend",
-      "runtimeExecutable": "daphne",
+      "runtimeExecutable": "F:/CRM/backend/venv/Scripts/daphne.exe",
       "runtimeArgs": ["-b", "0.0.0.0", "-p", "8000", "config.asgi:application"],
       "port": 8000,
       "autoPort": false,
@@ -15,6 +15,13 @@
       "runtimeArgs": ["./node_modules/vite/bin/vite.js"],
       "port": 5173,
       "cwd": "frontend"
+    }
+  ,
+    {
+      "name": "Dashboard Playground",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "const h=require('http'),fs=require('fs'),p=process.env.PORT||7777;h.createServer((q,r)=>{r.writeHead(200,{'Content-Type':'text/html'});r.end(fs.readFileSync('F:/CRM/dashboard-playground.html'))}).listen(p,()=>console.log('Playground on '+p))"],
+      "port": 7777
     }
   ]
 }
