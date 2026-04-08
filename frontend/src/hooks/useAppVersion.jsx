@@ -11,9 +11,9 @@ import api from '../services/api'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
 
-// Bump this every time you deploy a new web build.
-// The deploy script auto-creates an AppVersion row with the new code.
-const CURRENT_VERSION_CODE = 3
+// This should match the versionCode the app was originally built/installed with.
+// The deploy script auto-bumps AppVersion in DB; when DB code > this, users get notified.
+const CURRENT_VERSION_CODE = 2
 
 const DISMISSED_KEY = 'crm-update-dismissed-version'
 
