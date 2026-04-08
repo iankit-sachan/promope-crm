@@ -50,8 +50,27 @@ npm install --legacy-peer-deps --silent
 npm run build
 echo "    Done."
 
-# ── 7. Restart services ───────────────────────────────────
-echo ">>> [6/6] Restarting services..."
+# ── 7. Bump app version ───────────────────────────────────
+echo ">>> [6/7] Bumping app version..."
+cd "$BACKEND_DIR"
+python manage.py shell -c "
+from apps.notifications.models import AppVersion
+latest = AppVersion.objects.filter(platform='android').order_by('-version_code').first()
+code = (latest.version_code if latest else 0) + 1
+name = f'1.{code}'
+AppVersion.objects.create(
+    platform='android',
+    version_name=name,
+    version_code=code,
+    release_notes='New update available. Please refresh to get the latest features.',
+    force_update=False,
+)
+print(f'    App version bumped to v{name} (code {code})')
+"
+echo "    Done."
+
+# ── 8. Restart services ───────────────────────────────────
+echo ">>> [7/7] Restarting services..."
 sudo systemctl restart promope-crm
 sudo systemctl reload nginx
 sleep 2
