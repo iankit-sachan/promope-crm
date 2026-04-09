@@ -26,6 +26,12 @@ class OnlineTrackingJWTAuthentication(JWTAuthentication):
             return None
 
         user, validated_token = result
+
+        # Block deactivated users even if their token is still valid
+        if not user.is_active:
+            from rest_framework.exceptions import AuthenticationFailed
+            raise AuthenticationFailed('Account has been deactivated.')
+
         self._touch_presence(user)
         return user, validated_token
 
