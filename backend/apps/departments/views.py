@@ -2,7 +2,7 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from .models import Department
 from .serializers import DepartmentSerializer, DepartmentDetailSerializer
-from apps.authentication.permissions import IsManagerOrAbove, IsAdminOrAbove
+from apps.authentication.permissions import IsManagerOrAbove, IsAdminOrAbove, IsHROrAbove
 from apps.activity.utils import log_activity
 
 
@@ -19,7 +19,7 @@ class DepartmentListCreateView(generics.ListCreateAPIView):
 
     def get_permissions(self):
         if self.request.method == 'POST':
-            return [IsAuthenticated(), IsAdminOrAbove()]
+            return [IsAuthenticated(), IsHROrAbove()]
         return [IsAuthenticated()]
 
     def perform_create(self, serializer):
@@ -47,5 +47,5 @@ class DepartmentDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_permissions(self):
         if self.request.method in ['PUT', 'PATCH', 'DELETE']:
-            return [IsAuthenticated(), IsAdminOrAbove()]
+            return [IsAuthenticated(), IsHROrAbove()]
         return [IsAuthenticated()]
