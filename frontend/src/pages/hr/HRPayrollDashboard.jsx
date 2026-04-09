@@ -4,7 +4,7 @@ import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts'
-import { Wallet, UserCheck, Clock, Users, Download, CheckCircle, AlertTriangle } from 'lucide-react'
+import { Wallet, UserCheck, Clock, Users, Download, CheckCircle, AlertTriangle, Copy, Check } from 'lucide-react'
 import { payrollService, departmentService } from '../../services/api'
 import { formatCurrency, initials } from '../../utils/helpers'
 import StatCard from '../../components/common/StatCard'
@@ -32,6 +32,24 @@ function PaymentStatusBadge({ status }) {
   )
 }
 
+// ── Copy Button ───────────────────────────────────────────────────────────────
+function CopyBtn({ value }) {
+  const [copied, setCopied] = useState(false)
+  const handleCopy = () => {
+    if (!value) return
+    navigator.clipboard.writeText(value)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+  return (
+    <button type="button" onClick={handleCopy}
+      className="p-1 rounded hover:bg-slate-600 transition-colors text-slate-500 hover:text-slate-300"
+      title="Copy">
+      {copied ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
+    </button>
+  )
+}
+
 // ── Mark Paid Modal ────────────────────────────────────────────────────────────
 function MarkPaidModal({ row, onClose, onSave }) {
   const today = new Date().toISOString().slice(0, 10)
@@ -41,6 +59,7 @@ function MarkPaidModal({ row, onClose, onSave }) {
     notes: '',
   })
   const [creating, setCreating] = useState(false)
+  const hasBank = row.bank_status === 'approved' && row.account_number
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -55,16 +74,68 @@ function MarkPaidModal({ row, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-800 rounded-xl border border-slate-700 w-full max-w-md fade-in">
+      <div className="bg-slate-800 rounded-xl border border-slate-700 w-full max-w-lg fade-in max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-5 border-b border-slate-700">
           <h3 className="font-semibold text-slate-200">Mark Salary as Paid</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-200 text-xl leading-none">&times;</button>
         </div>
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          {/* Employee + Salary info */}
           <div className="bg-slate-700/40 rounded-lg p-3 text-sm">
-            <p className="text-slate-300"><span className="text-slate-400">Employee:</span> {row.employee_name}</p>
-            <p className="text-slate-300 mt-1"><span className="text-slate-400">Net Salary:</span> {formatCurrency(row.net_salary)}</p>
+            <p className="text-slate-300"><span className="text-slate-400">Employee:</span> {row.employee_name} <span className="text-slate-500">({row.employee_code})</span></p>
+            <p className="text-slate-300 mt-1"><span className="text-slate-400">Net Salary:</span> <span className="text-green-400 font-semibold">{formatCurrency(row.net_salary)}</span></p>
           </div>
+
+          {/* Bank Details — Transfer To */}
+          {hasBank ? (
+            <div className="border border-indigo-500/20 bg-indigo-500/5 rounded-lg p-4 space-y-2.5">
+              <p className="text-xs font-semibold text-indigo-400 uppercase tracking-wide mb-2">Transfer To</p>
+              <div className="grid grid-cols-2 gap-2.5 text-sm">
+                <div>
+                  <p className="text-[11px] text-slate-500">Account Holder</p>
+                  <p className="text-slate-200">{row.account_holder_name}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-slate-500">Bank</p>
+                  <p className="text-slate-200">{row.bank_name}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-[11px] text-slate-500">Account Number</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-slate-200 font-mono">{row.account_number}</p>
+                    <CopyBtn value={row.account_number} />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[11px] text-slate-500">IFSC Code</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-slate-200 font-mono">{row.ifsc_code}</p>
+                    <CopyBtn value={row.ifsc_code} />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[11px] text-slate-500">Branch</p>
+                  <p className="text-slate-300">{row.branch_name || '—'}</p>
+                </div>
+                {row.upi_id && (
+                  <div className="col-span-2">
+                    <p className="text-[11px] text-slate-500">UPI ID</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-slate-200">{row.upi_id}</p>
+                      <CopyBtn value={row.upi_id} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-3 py-2.5 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+              <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+              <p className="text-xs text-amber-300">No bank details on file. Employee has not submitted bank account information.</p>
+            </div>
+          )}
+
+          {/* Payment details */}
           <div>
             <label className="text-xs text-slate-400 mb-1 block">Payment Method</label>
             <select

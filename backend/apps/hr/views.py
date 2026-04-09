@@ -816,8 +816,13 @@ def payroll_dashboard(request):
             'payment_id':     payment.id if payment else None,
             'has_payslip':    hasattr(payment, 'payslip') if payment else False,
             'payslip_auto_generated': payment.payslip.is_auto_generated if (payment and hasattr(payment, 'payslip')) else None,
-            'bank_status':    getattr(getattr(ss.employee, 'bank_details', None), 'status', None),
-            'bank_name':      getattr(getattr(ss.employee, 'bank_details', None), 'bank_name', None),
+            'bank_status':          getattr(getattr(ss.employee, 'bank_details', None), 'status', None),
+            'bank_name':            getattr(getattr(ss.employee, 'bank_details', None), 'bank_name', None),
+            'account_holder_name':  getattr(getattr(ss.employee, 'bank_details', None), 'account_holder_name', None),
+            'account_number':       getattr(getattr(ss.employee, 'bank_details', None), 'account_number', None),
+            'ifsc_code':            getattr(getattr(ss.employee, 'bank_details', None), 'ifsc_code', None),
+            'branch_name':          getattr(getattr(ss.employee, 'bank_details', None), 'branch_name', None),
+            'upi_id':               getattr(getattr(ss.employee, 'bank_details', None), 'upi_id', None),
         })
 
     return Response({
