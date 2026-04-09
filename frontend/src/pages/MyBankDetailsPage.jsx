@@ -154,14 +154,14 @@ export default function MyBankDetailsPage() {
         </p>
       </div>
 
-      {/* Status banners — only for HR+ (employees see status in their confirmation card) */}
-      {!editing && record && isHrOrAbove && record.status === 'pending' && (
+      {/* Status banners */}
+      {!editing && record && record.status === 'pending' && (
         <div className="flex items-center gap-3 px-4 py-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
           <Clock className="w-5 h-5 text-yellow-400 flex-shrink-0" />
           <p className="text-sm text-yellow-300">Your bank details are pending HR approval. You will be notified once reviewed.</p>
         </div>
       )}
-      {!editing && record && isHrOrAbove && record.status === 'rejected' && (
+      {!editing && record && record.status === 'rejected' && (
         <div className="flex items-start gap-3 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl">
           <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
           <div>
@@ -172,53 +172,8 @@ export default function MyBankDetailsPage() {
         </div>
       )}
 
-      {/* View Mode — Employee sees confirmation only; HR+ sees full details */}
-      {!editing && record && !isHrOrAbove && (
-        <div className="card flex flex-col items-center justify-center py-10">
-          {record.status === 'approved' && (
-            <>
-              <CheckCircle className="w-12 h-12 text-green-400 mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-1">Bank Details Submitted</h3>
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-500/10 text-green-400 mb-3">Approved</span>
-              <p className="text-sm text-slate-400 text-center max-w-sm">
-                Your bank details have been verified and approved by HR. Contact HR if you need to make changes.
-              </p>
-            </>
-          )}
-          {record.status === 'pending' && (
-            <>
-              <Clock className="w-12 h-12 text-yellow-400 mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-1">Bank Details Submitted</h3>
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-yellow-500/10 text-yellow-400 mb-3">Pending Review</span>
-              <p className="text-sm text-slate-400 text-center max-w-sm">
-                Your bank details have been submitted and are awaiting HR review. You will be notified once reviewed.
-              </p>
-            </>
-          )}
-          {record.status === 'rejected' && (
-            <>
-              <XCircle className="w-12 h-12 text-red-400 mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-1">Bank Details Rejected</h3>
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-red-500/10 text-red-400 mb-3">Rejected</span>
-              {record.review_note && (
-                <p className="text-sm text-red-300/80 text-center max-w-sm mb-2">Reason: "{record.review_note}"</p>
-              )}
-              <p className="text-sm text-slate-400 text-center max-w-sm mb-4">
-                Please update your details and resubmit for review.
-              </p>
-              <button onClick={startEdit} className="btn-primary flex items-center gap-2 text-sm">
-                <Edit2 className="w-4 h-4" /> Resubmit Details
-              </button>
-            </>
-          )}
-          <p className="text-xs text-slate-500 mt-4">
-            Submitted on {new Date(record.updated_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-          </p>
-        </div>
-      )}
-
-      {/* HR+ users can see full details on this page too */}
-      {!editing && record && isHrOrAbove && (
+      {/* View Mode — everyone sees their own details */}
+      {!editing && record && (
         <div className="card space-y-5">
           <div className="flex items-center justify-between pb-4 border-b border-slate-700">
             <div className="flex items-center gap-3">
