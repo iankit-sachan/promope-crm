@@ -4,7 +4,7 @@ import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts'
-import { Wallet, UserCheck, Clock, Users, Download, CheckCircle } from 'lucide-react'
+import { Wallet, UserCheck, Clock, Users, Download, CheckCircle, AlertTriangle } from 'lucide-react'
 import { payrollService, departmentService } from '../../services/api'
 import { formatCurrency, initials } from '../../utils/helpers'
 import StatCard from '../../components/common/StatCard'
@@ -334,7 +334,7 @@ export default function HRPayrollDashboard() {
             <table className="w-full">
               <thead className="border-b border-slate-700">
                 <tr>
-                  {['Employee','Dept','Base Salary','Deductions','Net Salary','Status','Actions'].map(h => (
+                  {['Employee','Dept','Bank','Base Salary','Deductions','Net Salary','Status','Actions'].map(h => (
                     <th key={h} className="th text-left">{h}</th>
                   ))}
                 </tr>
@@ -354,6 +354,19 @@ export default function HRPayrollDashboard() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-400">{row.department || '—'}</td>
+                    <td className="px-4 py-3">
+                      {row.bank_status === 'approved' ? (
+                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-green-500/10 text-green-400">
+                          {row.bank_name || 'Approved'}
+                        </span>
+                      ) : row.bank_status === 'pending' ? (
+                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400">Pending</span>
+                      ) : row.bank_status === 'rejected' ? (
+                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-red-500/10 text-red-400">Rejected</span>
+                      ) : (
+                        <span className="text-[11px] text-slate-500">Not added</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-sm text-slate-300">{formatCurrency(row.base_salary)}</td>
                     <td className="px-4 py-3 text-sm text-red-400">{formatCurrency(row.deductions)}</td>
                     <td className="px-4 py-3 text-sm font-semibold text-green-400">{formatCurrency(row.net_salary)}</td>
@@ -361,12 +374,18 @@ export default function HRPayrollDashboard() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         {row.payment_status !== 'paid' && (
-                          <button
-                            onClick={() => setMarkPaidRow(row)}
-                            className="px-2 py-1 text-xs bg-green-600/20 text-green-400 hover:bg-green-600/30 rounded-lg border border-green-500/20"
-                          >
-                            Mark Paid
-                          </button>
+                          row.bank_status === 'approved' ? (
+                            <button
+                              onClick={() => setMarkPaidRow(row)}
+                              className="px-2 py-1 text-xs bg-green-600/20 text-green-400 hover:bg-green-600/30 rounded-lg border border-green-500/20"
+                            >
+                              Mark Paid
+                            </button>
+                          ) : (
+                            <span className="flex items-center gap-1 text-[11px] text-amber-400" title="Bank details must be approved before paying">
+                              <AlertTriangle className="w-3 h-3" /> No bank
+                            </span>
+                          )
                         )}
                         {row.payment_status === 'paid' && !row.has_payslip && row.payment_id && (
                           <button
