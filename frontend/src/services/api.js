@@ -134,10 +134,7 @@ export const taskService = {
   delete: (id) => api.delete(`/tasks/${id}/`),
   updateProgress: (id, data) => api.patch(`/tasks/${id}/progress/`, data),
   addComment: (id, content) => api.post(`/tasks/${id}/comments/`, { content }),
-  uploadAttachment: (id, formData) =>
-    api.post(`/tasks/${id}/attachments/`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+  uploadAttachment: (id, formData) => api.post(`/tasks/${id}/attachments/`, formData),
 }
 
 export const departmentService = {
@@ -194,7 +191,7 @@ export const chatService = {
   conversationMessages: (id)     => api.get(`/chat/conversations/${id}/messages/`),
   sendDirectMessage:  (id, data) => {
     if (data instanceof FormData) {
-      return api.post(`/chat/conversations/${id}/send/`, data, { headers: { 'Content-Type': 'multipart/form-data' } })
+      return api.post(`/chat/conversations/${id}/send/`, data)
     }
     return api.post(`/chat/conversations/${id}/send/`, data)
   },
@@ -208,7 +205,7 @@ export const chatService = {
   groupMessages:     (id)         => api.get(`/chat/groups/${id}/messages/`),
   sendGroupMessage:  (id, data)   => {
     if (data instanceof FormData) {
-      return api.post(`/chat/groups/${id}/send/`, data, { headers: { 'Content-Type': 'multipart/form-data' } })
+      return api.post(`/chat/groups/${id}/send/`, data)
     }
     return api.post(`/chat/groups/${id}/send/`, data)
   },
@@ -217,7 +214,7 @@ export const chatService = {
 
   // PDF Reports
   myReports:    ()        => api.get('/chat/reports/'),
-  submitReport: (formData)=> api.post('/chat/reports/', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  submitReport: (formData)=> api.post('/chat/reports/', formData),
   adminReports: (params)  => api.get('/chat/reports/admin/', { params }),
   reportDetail: (id)      => api.get(`/chat/reports/${id}/`),
   reviewReport: (id, data)=> api.patch(`/chat/reports/${id}/`, data),
@@ -240,9 +237,7 @@ export const hrService = {
 
   // Documents
   documentList:     (params)     => api.get('/hr/documents/', { params }),
-  documentUpload:   (formData)   => api.post('/hr/documents/', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  }),
+  documentUpload:   (formData)   => api.post('/hr/documents/', formData),
   documentReview:   (id, data)   => api.patch(`/hr/documents/${id}/`, data),
 
   // Performance reports
@@ -254,9 +249,7 @@ export const hrService = {
   positionUpdate:   (id, data)   => api.patch(`/hr/recruitment/${id}/`, data),
   positionDelete:   (id)         => api.delete(`/hr/recruitment/${id}/`),
   applicantList:    (posId)      => api.get(`/hr/recruitment/${posId}/applicants/`),
-  applicantCreate:  (posId, fd)  => api.post(`/hr/recruitment/${posId}/applicants/`, fd, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  }),
+  applicantCreate:  (posId, fd)  => api.post(`/hr/recruitment/${posId}/applicants/`, fd),
   applicantUpdate:  (id, data)   => api.patch(`/hr/recruitment/applicants/${id}/`, data),
 
   // HR Task Assignment
@@ -365,9 +358,7 @@ export const hiringService = {
 
   // Candidates
   candidateList:   (params={}) => api.get('/hr/candidates/', { params }),
-  candidateCreate: (data)      => api.post('/hr/candidates/', data, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  }),
+  candidateCreate: (data)      => api.post('/hr/candidates/', data),
   candidateGet:    (id)        => api.get(`/hr/candidates/${id}/`),
   candidateUpdate: (id, data)  => api.patch(`/hr/candidates/${id}/`, data),
   candidateDelete: (id)        => api.delete(`/hr/candidates/${id}/`),
@@ -388,9 +379,7 @@ export const hiringService = {
 
   // Candidate Documents
   docList:         (params={}) => api.get('/hr/candidate-documents/', { params }),
-  docUpload:       (data)      => api.post('/hr/candidate-documents/', data, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  }),
+  docUpload:       (data)      => api.post('/hr/candidate-documents/', data),
   docDelete:       (id)        => api.delete(`/hr/candidate-documents/${id}/`),
 }
 
@@ -401,16 +390,8 @@ export const dailyReportService = {
   all:       (params) => api.get('/daily-reports/all/', { params }),
   analytics: ()       => api.get('/daily-reports/analytics/'),
   get:       (id)     => api.get(`/daily-reports/${id}/`),
-  create:    (data)   => {
-    const isForm = data instanceof FormData
-    return api.post('/daily-reports/', data,
-      isForm ? { headers: { 'Content-Type': 'multipart/form-data' } } : {})
-  },
-  update:    (id, data) => {
-    const isForm = data instanceof FormData
-    return api.patch(`/daily-reports/${id}/`, data,
-      isForm ? { headers: { 'Content-Type': 'multipart/form-data' } } : {})
-  },
+  create:    (data)   => api.post('/daily-reports/', data),
+  update:    (id, data) => api.patch(`/daily-reports/${id}/`, data),
   submit:    (id)       => api.post(`/daily-reports/${id}/submit/`),
   review:    (id, data) => api.patch(`/daily-reports/${id}/review/`, data),
 }
