@@ -479,7 +479,7 @@ export default function HRPayrollDashboard() {
                             Gen Payslip
                           </button>
                         )}
-                        {row.payment_status === 'paid' && row.bank_status === 'approved' && (
+                        {row.bank_status === 'approved' && (
                           <button
                             onClick={() => setBankViewRow(row)}
                             className="px-2 py-1 text-xs bg-slate-600/20 text-slate-300 hover:bg-slate-600/30 rounded-lg border border-slate-500/20 flex items-center gap-1"
