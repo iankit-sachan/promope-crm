@@ -25,7 +25,7 @@ const navItems = [
   { to: '/chat',           label: 'Messages',       icon: MessageSquare,   roles: ['founder','admin','manager','hr','employee'] },
   { to: '/attendance',     label: 'Attendance',     icon: CalendarDays,    roles: ['founder','admin','manager'] },
   { to: '/my-attendance',  label: 'My Attendance',  icon: UserCheck,       roles: ['founder','admin','manager','hr','employee'] },
-  { to: '/departments',    label: 'Departments',    icon: Building2,       roles: ['founder','admin','manager'] },
+  { to: '/departments',    label: 'Departments',    icon: Building2,       roles: ['founder','admin','manager','hr'] },
   { to: '/analytics',      label: 'Analytics',      icon: BarChart3,       roles: ['founder','admin','manager'] },
   { to: '/manager',        label: 'Mgr Dashboard',  icon: MonitorDot,      roles: ['founder','admin','manager'] },
   { to: '/reports',        label: 'Reports',        icon: FileBarChart2,   roles: ['founder','admin','manager'] },
