@@ -3,8 +3,11 @@ import {
   Users, CheckSquare, Clock, AlertTriangle,
   TrendingUp, Activity, UserCheck, XCircle,
   CalendarDays, LogIn, LogOut, Timer, FileText, AlertCircle,
+  Flame, Zap, Wallet, CreditCard, Star, ArrowRight,
 } from 'lucide-react'
-import { analyticsService, taskService, attendanceService, dailyReportService } from '../services/api'
+import { analyticsService, taskService, attendanceService, dailyReportService, payrollService, hrService } from '../services/api'
+import { formatCurrency } from '../utils/helpers'
+import { Link } from 'react-router-dom'
 import StatCard from '../components/common/StatCard'
 import LiveActivityFeed from '../components/dashboard/LiveActivityFeed'
 import TaskMonitoringTable from '../components/dashboard/TaskMonitoringTable'
@@ -43,7 +46,7 @@ function getGreeting() {
 // ── Employee personal dashboard ────────────────────────────────────────────────
 
 function EmployeeDashboard({ user }) {
-  const { data: tasksData, isLoading: tasksLoading } = useQuery({
+  const { data: tasksData } = useQuery({
     queryKey: ['my-tasks'],
     queryFn: () => taskService.list({}).then(r => r.data),
     refetchInterval: 30_000,
@@ -55,11 +58,48 @@ function EmployeeDashboard({ user }) {
     refetchInterval: 60_000,
   })
 
+  const { data: scoreData } = useQuery({
+    queryKey: ['my-att-score'],
+    queryFn: () => import('../services/api').then(({ default: api }) =>
+      api.get('/attendance/my-score/').then(r => r.data)
+    ),
+  })
+
+  const { data: payslips } = useQuery({
+    queryKey: ['my-payslips-dash'],
+    queryFn: () => payrollService.payslipList({}).then(r => {
+      const d = r.data
+      return Array.isArray(d) ? d : d?.results ?? []
+    }),
+  })
+
+  const { data: bankData } = useQuery({
+    queryKey: ['my-bank-status'],
+    queryFn: () => payrollService.bankList({ mine: 'true' }).then(r => {
+      const d = r.data
+      const list = Array.isArray(d) ? d : d?.results ?? []
+      return list[0] || null
+    }),
+  })
+
+  const { data: leaveData } = useQuery({
+    queryKey: ['my-leave-balance'],
+    queryFn: () => hrService.leaveBalances({}).then(r => r.data).catch(() => null),
+  })
+
   const tasks    = tasksData?.results || tasksData || []
   const pending  = tasks.filter(t => t.status === 'pending').length
   const inProg   = tasks.filter(t => t.status === 'in_progress').length
   const done     = tasks.filter(t => t.status === 'completed').length
   const overdue  = tasks.filter(t => t.is_overdue).length
+  const total    = tasks.length
+  const completion = total > 0 ? Math.round((done / total) * 100) : 0
+
+  const streak   = scoreData?.streak
+  const score    = scoreData?.month
+  const lastPayslip = payslips?.[0]
+  const leaveBalances = Array.isArray(leaveData) ? leaveData : leaveData?.results ?? []
+  const totalLeave = leaveBalances.reduce((a, b) => a + (b.remaining_days || 0), 0)
 
   const attStatus = {
     present:  { label: 'Present',  cls: 'text-green-400',  dot: 'bg-green-400' },
@@ -79,74 +119,158 @@ function EmployeeDashboard({ user }) {
         <p className="text-slate-400 text-sm mt-1 flex items-center gap-1.5">
           <CalendarDays className="w-3.5 h-3.5" />
           {formatDate(new Date().toISOString().slice(0, 10))}
+          <span className="capitalize ml-2 px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded-full text-xs">{user?.role}</span>
         </p>
       </div>
 
-      {/* Today's attendance card */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-sm flex items-center gap-2">
-            <CalendarDays className="w-4 h-4 text-indigo-400" />
-            Today's Attendance
-          </h3>
-          {todayAtt ? (
-            <span className={`text-xs font-semibold flex items-center gap-1.5 ${attCfg.cls}`}>
-              <span className={`w-2 h-2 rounded-full ${attCfg.dot}`} />
-              {attCfg.label}
-            </span>
-          ) : (
-            <span className="text-xs text-slate-500">Not checked in</span>
-          )}
+      {/* Today's Attendance + Streak */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Attendance card */}
+        <div className="card lg:col-span-2">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-sm flex items-center gap-2">
+              <CalendarDays className="w-4 h-4 text-indigo-400" />
+              Today's Attendance
+            </h3>
+            {todayAtt ? (
+              <span className={`text-xs font-semibold flex items-center gap-1.5 ${attCfg.cls}`}>
+                <span className={`w-2 h-2 rounded-full ${attCfg.dot}`} />
+                {attCfg.label}
+              </span>
+            ) : (
+              <span className="text-xs text-slate-500">Not checked in</span>
+            )}
+          </div>
+          <div className="grid grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1.5 text-slate-400 mb-1">
+                <LogIn className="w-3.5 h-3.5" />
+                <span className="text-[10px] uppercase tracking-wide">Login</span>
+              </div>
+              <p className="text-base font-bold text-white font-mono">{todayAtt?.login_time_str || '—'}</p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1.5 text-slate-400 mb-1">
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="text-[10px] uppercase tracking-wide">Logout</span>
+              </div>
+              <p className="text-base font-bold text-white font-mono">{todayAtt?.logout_time_str || '—'}</p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1.5 text-slate-400 mb-1">
+                <Timer className="w-3.5 h-3.5" />
+                <span className="text-[10px] uppercase tracking-wide">Hours</span>
+              </div>
+              <p className="text-base font-bold text-indigo-400">
+                {todayAtt?.total_work_hours > 0 ? `${Number(todayAtt.total_work_hours).toFixed(1)}h` : '—'}
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1.5 text-slate-400 mb-1">
+                <Star className="w-3.5 h-3.5" />
+                <span className="text-[10px] uppercase tracking-wide">Score</span>
+              </div>
+              <p className="text-base font-bold text-green-400">{score?.attendance_score ?? '—'}%</p>
+            </div>
+          </div>
         </div>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1.5 text-slate-400 mb-1">
-              <LogIn className="w-3.5 h-3.5" />
-              <span className="text-[10px] uppercase tracking-wide">Login</span>
+
+        {/* Streak card */}
+        <div className="card flex items-center justify-around">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-orange-500/10 rounded-xl flex items-center justify-center">
+              <Flame className="w-6 h-6 text-orange-400" />
             </div>
-            <p className="text-base font-bold text-white font-mono">
-              {todayAtt?.login_time_str || '—'}
-            </p>
+            <div>
+              <p className="text-2xl font-bold text-white">{streak?.current ?? 0}</p>
+              <p className="text-[10px] text-slate-400 uppercase">Day Streak</p>
+            </div>
           </div>
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1.5 text-slate-400 mb-1">
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="text-[10px] uppercase tracking-wide">Logout</span>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center">
+              <Zap className="w-6 h-6 text-purple-400" />
             </div>
-            <p className="text-base font-bold text-white font-mono">
-              {todayAtt?.logout_time_str || '—'}
-            </p>
-          </div>
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1.5 text-slate-400 mb-1">
-              <Timer className="w-3.5 h-3.5" />
-              <span className="text-[10px] uppercase tracking-wide">Hours</span>
+            <div>
+              <p className="text-2xl font-bold text-white">{streak?.longest ?? 0}</p>
+              <p className="text-[10px] text-slate-400 uppercase">Best Streak</p>
             </div>
-            <p className="text-base font-bold text-indigo-400">
-              {todayAtt?.total_work_hours > 0
-                ? `${Number(todayAtt.total_work_hours).toFixed(1)}h`
-                : '—'}
-            </p>
           </div>
         </div>
       </div>
 
       {/* Task stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Pending"     value={pending} icon={Clock}         color="yellow" />
-        <StatCard title="In Progress" value={inProg}  icon={Activity}      color="blue"   />
-        <StatCard title="Completed"   value={done}    icon={CheckSquare}   color="green"  />
-        <StatCard title="Overdue"     value={overdue} icon={AlertTriangle} color="red"    subtitle="Past deadline" />
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <StatCard title="Pending"     value={pending}    icon={Clock}         color="yellow" />
+        <StatCard title="In Progress" value={inProg}     icon={Activity}      color="blue"   />
+        <StatCard title="Completed"   value={done}       icon={CheckSquare}   color="green"  />
+        <StatCard title="Overdue"     value={overdue}    icon={AlertTriangle} color="red"    subtitle="Past deadline" />
+        <StatCard title="Completion"  value={`${completion}%`} icon={TrendingUp} color="indigo" subtitle={`${done}/${total} tasks`} />
+      </div>
+
+      {/* Quick Info Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Last Payslip */}
+        <Link to="/payslips" className="card hover:border-indigo-500/30 transition-colors group">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xs font-semibold text-slate-400 uppercase">Last Payslip</h3>
+            <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-indigo-400 transition-colors" />
+          </div>
+          {lastPayslip ? (
+            <>
+              <p className="text-xl font-bold text-green-400">{formatCurrency(lastPayslip.net_salary)}</p>
+              <p className="text-xs text-slate-500 mt-1">
+                {lastPayslip.payment_month && `${['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][lastPayslip.payment_month]} ${lastPayslip.payment_year}`}
+                {lastPayslip.payment_status === 'paid' && <span className="ml-2 text-green-400">Paid</span>}
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-slate-500">No payslips yet</p>
+          )}
+        </Link>
+
+        {/* Bank Details Status */}
+        <Link to="/my-bank-details" className="card hover:border-indigo-500/30 transition-colors group">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xs font-semibold text-slate-400 uppercase">Bank Details</h3>
+            <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-indigo-400 transition-colors" />
+          </div>
+          {bankData ? (
+            <>
+              <p className="text-sm font-semibold text-slate-200">{bankData.bank_name || '—'}</p>
+              <p className="text-xs mt-1">
+                {bankData.status === 'approved' && <span className="text-green-400">Approved</span>}
+                {bankData.status === 'pending' && <span className="text-yellow-400">Pending Review</span>}
+                {bankData.status === 'rejected' && <span className="text-red-400">Rejected</span>}
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-amber-400">Not submitted</p>
+          )}
+        </Link>
+
+        {/* Leave Balance */}
+        <Link to="/hr/leave" className="card hover:border-indigo-500/30 transition-colors group">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xs font-semibold text-slate-400 uppercase">Leave Balance</h3>
+            <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-indigo-400 transition-colors" />
+          </div>
+          {leaveBalances.length > 0 ? (
+            <>
+              <p className="text-xl font-bold text-indigo-400">{totalLeave} days</p>
+              <p className="text-xs text-slate-500 mt-1">
+                {leaveBalances.map(l => `${l.leave_type}: ${l.remaining_days}`).join(' · ')}
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-slate-500">No leave data</p>
+          )}
+        </Link>
       </div>
 
       {/* My tasks + activity feed */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <div className="xl:col-span-2">
-          {tasksLoading ? (
-            <LoadingSpinner text="Loading your tasks…" />
-          ) : (
-            <TaskMonitoringTable compact />
-          )}
+          <TaskMonitoringTable compact />
         </div>
         <div className="xl:col-span-1" style={{ minHeight: '400px' }}>
           <LiveActivityFeed />
