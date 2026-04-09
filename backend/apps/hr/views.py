@@ -1521,187 +1521,229 @@ def payslip_download(request, pk):
     payment = payslip.payment
     month_name = calendar.month_name[payment.month]
 
-    # ── Build PDF ──────────────────────────────────────────────────────────
+    # ── Build Professional PDF ────────────────────────────────────────────
     buffer = io.BytesIO()
     doc    = SimpleDocTemplate(
         buffer,
         pagesize=A4,
-        rightMargin=2*cm, leftMargin=2*cm,
-        topMargin=2*cm,   bottomMargin=2*cm,
+        rightMargin=1.5*cm, leftMargin=1.5*cm,
+        topMargin=1.5*cm,   bottomMargin=1.5*cm,
     )
 
     styles   = getSampleStyleSheet()
     elements = []
 
-    # ── Header ─────────────────────────────────────────────────────────────
-    DARK  = colors.HexColor('#1e293b')
-    INDIGO = colors.HexColor('#6366f1')
-    GREY  = colors.HexColor('#64748b')
-    LIGHT = colors.HexColor('#f8fafc')
+    # ── Colors ─────────────────────────────────────────────────────────────
+    DARK    = colors.HexColor('#1a1a2e')
+    PRIMARY = colors.HexColor('#6366f1')
+    GREY    = colors.HexColor('#6b7280')
+    LIGHT_G = colors.HexColor('#f3f4f6')
+    GREEN   = colors.HexColor('#059669')
+    RED     = colors.HexColor('#dc2626')
+    WHITE   = colors.white
+    BORDER  = colors.HexColor('#d1d5db')
 
-    title_style = ParagraphStyle(
-        'title', parent=styles['Normal'],
-        fontSize=20, fontName='Helvetica-Bold', textColor=DARK,
-    )
-    sub_style = ParagraphStyle(
-        'sub', parent=styles['Normal'],
-        fontSize=13, fontName='Helvetica', textColor=GREY,
-    )
-    label_style = ParagraphStyle(
-        'label', parent=styles['Normal'],
-        fontSize=9, fontName='Helvetica', textColor=GREY,
-    )
-    value_style = ParagraphStyle(
-        'value', parent=styles['Normal'],
-        fontSize=10, fontName='Helvetica-Bold', textColor=DARK,
-    )
+    page_w = A4[0] - 3*cm  # usable width
 
-    elements.append(Paragraph('Staff Management CRM', title_style))
-    elements.append(Paragraph('SALARY PAYSLIP', sub_style))
-    elements.append(Spacer(1, 0.3*cm))
-    elements.append(HRFlowable(width='100%', thickness=2, color=INDIGO))
-    elements.append(Spacer(1, 0.4*cm))
+    # ── Company Header ─────────────────────────────────────────────────────
+    company_name_style = ParagraphStyle('co', fontSize=24, fontName='Helvetica-Bold', textColor=PRIMARY, leading=28)
+    company_addr_style = ParagraphStyle('addr', fontSize=8, fontName='Helvetica', textColor=GREY, leading=11)
+    payslip_title_style = ParagraphStyle('pst', fontSize=12, fontName='Helvetica-Bold', textColor=DARK, alignment=2)
+    payslip_period_style = ParagraphStyle('psp', fontSize=9, fontName='Helvetica', textColor=GREY, alignment=2)
 
-    # ── Pay Period + Employee Info ─────────────────────────────────────────
-    dept_name = emp.department.name if emp.department else '—'
-    info_data = [
-        ['Pay Period',    f'{month_name} {payment.year}', 'Employee ID',  emp.employee_id],
-        ['Employee Name', emp.full_name,                  'Department',   dept_name],
-        ['Designation',   emp.role or '—',                'Payment Method', payment.get_payment_method_display()],
-    ]
-    info_table = Table(info_data, colWidths=[3.5*cm, 6*cm, 3.5*cm, 5*cm])
-    info_table.setStyle(TableStyle([
-        ('FONTNAME',    (0, 0), (-1, -1), 'Helvetica'),
-        ('FONTSIZE',    (0, 0), (-1, -1), 9),
-        ('TEXTCOLOR',   (0, 0), (0, -1), GREY),
-        ('TEXTCOLOR',   (2, 0), (2, -1), GREY),
-        ('FONTNAME',    (1, 0), (1, -1), 'Helvetica-Bold'),
-        ('FONTNAME',    (3, 0), (3, -1), 'Helvetica-Bold'),
-        ('TEXTCOLOR',   (1, 0), (1, -1), DARK),
-        ('TEXTCOLOR',   (3, 0), (3, -1), DARK),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
-        ('TOPPADDING',    (0, 0), (-1, -1), 5),
+    # Company name as separate element (not in table to avoid overlap)
+    elements.append(Paragraph('PromoPe', company_name_style))
+    elements.append(Spacer(1, 0.15*cm))
+
+    header_data = [[
+        Paragraph(
+            'Embassy Galaxy, Sector 62, Noida<br/>'
+            'Uttar Pradesh 201309, India',
+            company_addr_style
+        ),
+        Paragraph(
+            f'<b>PAYSLIP</b><br/>{month_name} {payment.year}',
+            payslip_title_style
+        ),
+    ]]
+    header_tbl = Table(header_data, colWidths=[page_w * 0.6, page_w * 0.4])
+    header_tbl.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
     ]))
-    elements.append(info_table)
+    elements.append(header_tbl)
+    elements.append(Spacer(1, 0.3*cm))
+    elements.append(HRFlowable(width='100%', thickness=2, color=PRIMARY))
     elements.append(Spacer(1, 0.5*cm))
-    elements.append(HRFlowable(width='100%', thickness=1, color=colors.HexColor('#e2e8f0')))
-    elements.append(Spacer(1, 0.4*cm))
 
-    # ── Earnings ───────────────────────────────────────────────────────────
-    def fmt(val):
-        return f'₹{float(val):,.2f}'
+    # ── Employee Info Card ─────────────────────────────────────────────────
+    dept_name = emp.department.name if emp.department else '—'
+    lbl = ParagraphStyle('lbl', fontSize=7, fontName='Helvetica', textColor=GREY, leading=9)
+    val = ParagraphStyle('val', fontSize=9, fontName='Helvetica-Bold', textColor=DARK, leading=12)
+
+    info_data = [
+        [Paragraph('Employee Name', lbl), Paragraph('Employee ID', lbl),
+         Paragraph('Department', lbl), Paragraph('Designation', lbl)],
+        [Paragraph(emp.full_name, val), Paragraph(emp.employee_id, val),
+         Paragraph(dept_name, val), Paragraph(emp.role or '—', val)],
+    ]
+    info_tbl = Table(info_data, colWidths=[page_w * 0.28, page_w * 0.22, page_w * 0.25, page_w * 0.25])
+    info_tbl.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), LIGHT_G),
+        ('TOPPADDING', (0, 0), (-1, 0), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 1),
+        ('TOPPADDING', (0, 1), (-1, 1), 1),
+        ('BOTTOMPADDING', (0, 1), (-1, 1), 8),
+        ('LEFTPADDING', (0, 0), (-1, -1), 10),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+        ('ROUNDEDCORNERS', [6]),
+    ]))
+    elements.append(info_tbl)
+    elements.append(Spacer(1, 0.5*cm))
+
+    # ── Earnings & Deductions Side-by-Side ─────────────────────────────────
+    def fmt(v):
+        return f'Rs. {float(v):,.2f}'
 
     total_earnings = (
         (payslip.base_salary or Decimal('0')) +
-        (payslip.hra         or Decimal('0')) +
-        (payslip.allowances  or Decimal('0')) +
-        (payslip.bonus       or Decimal('0'))
+        (payslip.hra or Decimal('0')) +
+        (payslip.allowances or Decimal('0')) +
+        (payslip.bonus or Decimal('0'))
     )
-    earnings_data = [
-        ['EARNINGS', 'AMOUNT'],
-        ['Base Salary',  fmt(payslip.base_salary)],
-        ['HRA',          fmt(payslip.hra)],
-        ['Allowances',   fmt(payslip.allowances)],
-        ['Bonus',        fmt(payslip.bonus)],
-        ['Total Earnings', fmt(total_earnings)],
-    ]
     total_deductions = (payslip.deductions or Decimal('0')) + (payslip.tax or Decimal('0'))
-    deductions_data = [
-        ['DEDUCTIONS', 'AMOUNT'],
-        ['Deductions',  fmt(payslip.deductions)],
-        ['Tax',         fmt(payslip.tax)],
-        ['Total Deductions', fmt(total_deductions)],
+
+    hdr_e = ParagraphStyle('he', fontSize=8, fontName='Helvetica-Bold', textColor=WHITE)
+    hdr_d = ParagraphStyle('hd', fontSize=8, fontName='Helvetica-Bold', textColor=WHITE)
+    cell_l = ParagraphStyle('cl', fontSize=8.5, fontName='Helvetica', textColor=DARK)
+    cell_r = ParagraphStyle('cr', fontSize=8.5, fontName='Helvetica', textColor=DARK, alignment=2)
+    cell_rb = ParagraphStyle('crb', fontSize=9, fontName='Helvetica-Bold', textColor=DARK, alignment=2)
+    cell_lb = ParagraphStyle('clb', fontSize=9, fontName='Helvetica-Bold', textColor=DARK)
+
+    half_w = page_w * 0.48
+
+    # Earnings table
+    earn_rows = [
+        [Paragraph('EARNINGS', hdr_e), Paragraph('AMOUNT', hdr_e)],
+        [Paragraph('Base Salary', cell_l), Paragraph(fmt(payslip.base_salary), cell_r)],
+        [Paragraph('HRA', cell_l), Paragraph(fmt(payslip.hra), cell_r)],
+        [Paragraph('Allowances', cell_l), Paragraph(fmt(payslip.allowances), cell_r)],
+        [Paragraph('Bonus', cell_l), Paragraph(fmt(payslip.bonus), cell_r)],
+        [Paragraph('Total Earnings', cell_lb), Paragraph(fmt(total_earnings), cell_rb)],
     ]
+    e_tbl = Table(earn_rows, colWidths=[half_w * 0.6, half_w * 0.4])
+    e_tbl.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), GREEN),
+        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#ecfdf5')),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -2), [WHITE, LIGHT_G]),
+        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('LEFTPADDING', (0, 0), (-1, -1), 8),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, -1), 0.5, BORDER),
+    ]))
 
-    col_w = [8*cm, 5.5*cm]
-    earn_tbl  = _build_salary_table(earnings_data,  col_w, DARK, INDIGO, LIGHT)
-    deduc_tbl = _build_salary_table(deductions_data, col_w, DARK, colors.HexColor('#ef4444'), LIGHT)
+    # Deductions table
+    deduc_rows = [
+        [Paragraph('DEDUCTIONS', hdr_d), Paragraph('AMOUNT', hdr_d)],
+        [Paragraph('Deductions', cell_l), Paragraph(fmt(payslip.deductions), cell_r)],
+        [Paragraph('Tax', cell_l), Paragraph(fmt(payslip.tax), cell_r)],
+        [Paragraph('Total Deductions', cell_lb), Paragraph(fmt(total_deductions), cell_rb)],
+    ]
+    d_tbl = Table(deduc_rows, colWidths=[half_w * 0.6, half_w * 0.4])
+    d_tbl.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), RED),
+        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#fef2f2')),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -2), [WHITE, LIGHT_G]),
+        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('LEFTPADDING', (0, 0), (-1, -1), 8),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, -1), 0.5, BORDER),
+    ]))
 
-    elements.append(Paragraph('Earnings', ParagraphStyle('h3', parent=styles['Normal'], fontSize=11, fontName='Helvetica-Bold', textColor=DARK)))
-    elements.append(Spacer(1, 0.2*cm))
-    elements.append(earn_tbl)
-    elements.append(Spacer(1, 0.4*cm))
-    elements.append(Paragraph('Deductions', ParagraphStyle('h3', parent=styles['Normal'], fontSize=11, fontName='Helvetica-Bold', textColor=DARK)))
-    elements.append(Spacer(1, 0.2*cm))
-    elements.append(deduc_tbl)
-    elements.append(Spacer(1, 0.5*cm))
+    # Side-by-side layout
+    side_tbl = Table([[e_tbl, d_tbl]], colWidths=[page_w * 0.5, page_w * 0.5])
+    side_tbl.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (0, 0), 0),
+        ('RIGHTPADDING', (1, 0), (1, 0), 0),
+        ('LEFTPADDING', (1, 0), (1, 0), 6),
+    ]))
+    elements.append(side_tbl)
+    elements.append(Spacer(1, 0.6*cm))
 
     # ── Net Salary Box ─────────────────────────────────────────────────────
-    net_data = [['NET SALARY', fmt(payslip.net_salary)]]
-    net_tbl  = Table(net_data, colWidths=[8*cm, 5.5*cm])
+    net_label = ParagraphStyle('nl', fontSize=14, fontName='Helvetica-Bold', textColor=WHITE)
+    net_value = ParagraphStyle('nv', fontSize=16, fontName='Helvetica-Bold', textColor=WHITE, alignment=2)
+
+    net_data = [[Paragraph('NET SALARY', net_label), Paragraph(fmt(payslip.net_salary), net_value)]]
+    net_tbl = Table(net_data, colWidths=[page_w * 0.5, page_w * 0.5])
     net_tbl.setStyle(TableStyle([
-        ('BACKGROUND',   (0, 0), (-1, -1), INDIGO),
-        ('TEXTCOLOR',    (0, 0), (-1, -1), colors.white),
-        ('FONTNAME',     (0, 0), (-1, -1), 'Helvetica-Bold'),
-        ('FONTSIZE',     (0, 0), (-1, -1), 14),
-        ('ALIGN',        (1, 0), (1, -1), 'RIGHT'),
-        ('TOPPADDING',   (0, 0), (-1, -1), 10),
-        ('BOTTOMPADDING',(0, 0), (-1, -1), 10),
-        ('LEFTPADDING',  (0, 0), (-1, -1), 12),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 12),
-        ('ROUNDEDCORNERS', [4]),
+        ('BACKGROUND', (0, 0), (-1, -1), PRIMARY),
+        ('TOPPADDING', (0, 0), (-1, -1), 14),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 14),
+        ('LEFTPADDING', (0, 0), (-1, -1), 16),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 16),
+        ('ROUNDEDCORNERS', [6]),
     ]))
     elements.append(net_tbl)
-    elements.append(Spacer(1, 0.5*cm))
+    elements.append(Spacer(1, 0.6*cm))
 
-    # ── Payment Info ───────────────────────────────────────────────────────
-    pay_date_str = str(payment.payment_date) if payment.payment_date else '—'
-    elements.append(HRFlowable(width='100%', thickness=1, color=colors.HexColor('#e2e8f0')))
+    # ── Payment Details ────────────────────────────────────────────────────
+    pay_date_str = payment.payment_date.strftime('%d %b %Y') if payment.payment_date else '—'
+    pay_lbl = ParagraphStyle('plbl', fontSize=7, fontName='Helvetica', textColor=GREY, leading=9)
+    pay_val = ParagraphStyle('pval', fontSize=8.5, fontName='Helvetica-Bold', textColor=DARK, leading=12)
+
+    pay_info = [
+        [Paragraph('Payment Date', pay_lbl), Paragraph('Payment Method', pay_lbl),
+         Paragraph('Payment Status', pay_lbl), Paragraph('Pay Period', pay_lbl)],
+        [Paragraph(pay_date_str, pay_val), Paragraph(payment.get_payment_method_display(), pay_val),
+         Paragraph(payment.get_payment_status_display(), pay_val), Paragraph(f'{month_name} {payment.year}', pay_val)],
+    ]
+    pay_tbl = Table(pay_info, colWidths=[page_w * 0.25] * 4)
+    pay_tbl.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), LIGHT_G),
+        ('TOPPADDING', (0, 0), (-1, 0), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 1),
+        ('TOPPADDING', (0, 1), (-1, 1), 1),
+        ('BOTTOMPADDING', (0, 1), (-1, 1), 6),
+        ('LEFTPADDING', (0, 0), (-1, -1), 8),
+        ('ROUNDEDCORNERS', [4]),
+    ]))
+    elements.append(pay_tbl)
+    elements.append(Spacer(1, 0.8*cm))
+
+    # ── Footer ─────────────────────────────────────────────────────────────
+    elements.append(HRFlowable(width='100%', thickness=0.5, color=BORDER))
     elements.append(Spacer(1, 0.3*cm))
-    footer_style = ParagraphStyle('footer', parent=styles['Normal'], fontSize=8, textColor=GREY)
+    footer = ParagraphStyle('ft', fontSize=7, fontName='Helvetica', textColor=GREY, alignment=1)
     elements.append(Paragraph(
-        f'Payment Date: {pay_date_str} &nbsp;&nbsp;|&nbsp;&nbsp; '
-        f'Payment Method: {payment.get_payment_method_display()} &nbsp;&nbsp;|&nbsp;&nbsp; '
-        f'Status: {payment.get_payment_status_display()}',
-        footer_style,
+        'This is a system-generated payslip and does not require a signature.',
+        footer,
     ))
-    elements.append(Spacer(1, 0.3*cm))
+    elements.append(Spacer(1, 0.15*cm))
     elements.append(Paragraph(
-        f'Generated on {timezone.localtime(timezone.now()).strftime("%d %b %Y")} by Staff Management CRM',
-        footer_style,
+        f'Generated on {timezone.localtime(timezone.now()).strftime("%d %b %Y, %I:%M %p")} '
+        f'by PromoPe HR System',
+        footer,
+    ))
+    elements.append(Spacer(1, 0.15*cm))
+    elements.append(Paragraph(
+        'PromoPe &bull; Embassy Galaxy, Sector 62, Noida 201309, Uttar Pradesh, India',
+        footer,
     ))
 
     doc.build(elements)
     buffer.seek(0)
 
-    filename = f'payslip_{emp.employee_id}_{payment.year}_{payment.month:02d}.pdf'
+    filename = f'PromoPe_Payslip_{emp.employee_id}_{month_name}_{payment.year}.pdf'
     response = HttpResponse(buffer.read(), content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
-
-
-def _build_salary_table(data, col_widths, dark_color, header_color, light_color):
-    """Helper to build styled earnings/deductions table."""
-    from reportlab.platypus import Table, TableStyle
-    from reportlab.lib import colors
-
-    tbl = Table(data, colWidths=col_widths)
-    n   = len(data)
-    tbl.setStyle(TableStyle([
-        # Header row
-        ('BACKGROUND',    (0, 0), (-1, 0),  header_color),
-        ('TEXTCOLOR',     (0, 0), (-1, 0),  colors.white),
-        ('FONTNAME',      (0, 0), (-1, 0),  'Helvetica-Bold'),
-        ('FONTSIZE',      (0, 0), (-1, 0),  9),
-        # Data rows
-        ('FONTNAME',      (0, 1), (-1, -1), 'Helvetica'),
-        ('FONTSIZE',      (0, 1), (-1, -1), 9),
-        ('TEXTCOLOR',     (0, 1), (-1, -1), dark_color),
-        ('ROWBACKGROUNDS',(0, 1), (-1, -2), [light_color, colors.white]),
-        # Total row (last)
-        ('BACKGROUND',    (0, -1), (-1, -1), colors.HexColor('#e2e8f0')),
-        ('FONTNAME',      (0, -1), (-1, -1), 'Helvetica-Bold'),
-        # Alignment
-        ('ALIGN',         (1, 0),  (1, -1),  'RIGHT'),
-        # Padding
-        ('TOPPADDING',    (0, 0),  (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 0),  (-1, -1), 6),
-        ('LEFTPADDING',   (0, 0),  (-1, -1), 10),
-        ('RIGHTPADDING',  (0, 0),  (-1, -1), 10),
-        # Grid
-        ('GRID',          (0, 0),  (-1, -1), 0.5, colors.HexColor('#e2e8f0')),
-    ]))
-    return tbl
 
 
 # ══════════════════════════════════════════════════════════════════════════════
