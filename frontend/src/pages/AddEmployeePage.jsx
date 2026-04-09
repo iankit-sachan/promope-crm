@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { UserPlus, ArrowLeft, AlertCircle } from 'lucide-react'
+import { UserPlus, ArrowLeft, AlertCircle, Plus, X } from 'lucide-react'
 import { employeeService, departmentService } from '../services/api'
 import toast from 'react-hot-toast'
 
@@ -22,6 +22,8 @@ export default function AddEmployeePage() {
   const qc = useQueryClient()
   const [form, setForm] = useState(INITIAL_FORM)
   const [errors, setErrors] = useState({})
+  const [showNewDept, setShowNewDept] = useState(false)
+  const [newDeptName, setNewDeptName] = useState('')
 
   const { data: deptData } = useQuery({
     queryKey: ['departments'],
@@ -44,6 +46,21 @@ export default function AddEmployeePage() {
       } else {
         toast.error('Failed to add employee. Please try again.')
       }
+    },
+  })
+
+  const createDeptMutation = useMutation({
+    mutationFn: (name) => departmentService.create({ name }),
+    onSuccess: (res) => {
+      const newDept = res.data
+      qc.invalidateQueries({ queryKey: ['departments'] })
+      setForm((prev) => ({ ...prev, department_id: String(newDept.id) }))
+      setNewDeptName('')
+      setShowNewDept(false)
+      toast.success(`Department "${newDept.name}" created`)
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.name?.[0] || err.response?.data?.detail || 'Failed to create department')
     },
   })
 
@@ -167,17 +184,62 @@ export default function AddEmployeePage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label">Department</label>
-              <select
-                className="input"
-                value={form.department_id}
-                onChange={set('department_id')}
-              >
-                <option value="">— None —</option>
-                {departments.map((d) => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
-                ))}
-              </select>
-              {fieldError('department_id')}
+              {!showNewDept ? (
+                <>
+                  <select
+                    className="input"
+                    value={form.department_id}
+                    onChange={(e) => {
+                      if (e.target.value === '__new__') {
+                        setShowNewDept(true)
+                      } else {
+                        set('department_id')(e)
+                      }
+                    }}
+                  >
+                    <option value="">— None —</option>
+                    <option value="__new__" className="text-indigo-400">+ Create New Department</option>
+                    {departments.map((d) => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
+                  </select>
+                  {fieldError('department_id')}
+                </>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <input
+                    className="input flex-1"
+                    placeholder="Department name"
+                    value={newDeptName}
+                    onChange={(e) => setNewDeptName(e.target.value)}
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        if (newDeptName.trim()) createDeptMutation.mutate(newDeptName.trim())
+                      }
+                      if (e.key === 'Escape') setShowNewDept(false)
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={!newDeptName.trim() || createDeptMutation.isPending}
+                    onClick={() => newDeptName.trim() && createDeptMutation.mutate(newDeptName.trim())}
+                    className="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg disabled:opacity-50"
+                    title="Create"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowNewDept(false); setNewDeptName('') }}
+                    className="p-2 hover:bg-slate-700 text-slate-400 rounded-lg"
+                    title="Cancel"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
             <div>
               <label className="label">Job Title *</label>
