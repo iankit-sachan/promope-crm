@@ -225,6 +225,11 @@ class Applicant(models.Model):
 class EmployeeBankDetails(models.Model):
     """Bank account information for an employee. Sensitive fields masked in serializer."""
 
+    class Status(models.TextChoices):
+        PENDING  = 'pending',  'Pending'
+        APPROVED = 'approved', 'Approved'
+        REJECTED = 'rejected', 'Rejected'
+
     employee             = models.OneToOneField(
         'employees.Employee',
         on_delete=models.CASCADE,
@@ -237,6 +242,16 @@ class EmployeeBankDetails(models.Model):
     branch_name          = models.CharField(max_length=255, blank=True)
     upi_id               = models.CharField(max_length=100, blank=True)
     pan_number           = models.CharField(max_length=10, blank=True)  # 10-char Indian PAN
+
+    # Approval workflow
+    status               = models.CharField(max_length=20, choices=Status.choices, default=Status.APPROVED)
+    reviewed_by          = models.ForeignKey(
+        'authentication.User', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='reviewed_bank_details',
+    )
+    reviewed_at          = models.DateTimeField(null=True, blank=True)
+    review_note          = models.TextField(blank=True)
+
     created_at           = models.DateTimeField(auto_now_add=True)
     updated_at           = models.DateTimeField(auto_now=True)
 
@@ -246,6 +261,29 @@ class EmployeeBankDetails(models.Model):
     def __str__(self):
         tail = self.account_number[-4:] if len(self.account_number) >= 4 else '****'
         return f'{self.employee.full_name} — {self.bank_name} (****{tail})'
+
+
+class BankDetailsChangeLog(models.Model):
+    """Audit trail for bank details changes."""
+
+    bank_details = models.ForeignKey(
+        EmployeeBankDetails, on_delete=models.CASCADE, related_name='change_logs',
+    )
+    changed_by   = models.ForeignKey(
+        'authentication.User', on_delete=models.SET_NULL, null=True,
+    )
+    field_name   = models.CharField(max_length=100)
+    old_value    = models.TextField(blank=True)
+    new_value    = models.TextField(blank=True)
+    change_type  = models.CharField(max_length=20, default='updated')  # 'created' or 'updated'
+    changed_at   = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'bank_details_change_log'
+        ordering = ['-changed_at']
+
+    def __str__(self):
+        return f'{self.field_name}: {self.old_value} → {self.new_value}'
 
 
 class SalaryStructure(models.Model):

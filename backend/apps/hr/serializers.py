@@ -5,7 +5,7 @@ HR module serializers.
 from rest_framework import serializers
 from .models import (
     LeaveRequest, LeaveBalance, HRDocument, RecruitmentPosition, Applicant,
-    EmployeeBankDetails, SalaryStructure, SalaryPayment, Payslip,
+    EmployeeBankDetails, BankDetailsChangeLog, SalaryStructure, SalaryPayment, Payslip,
     JobPosition, Candidate, Interview, CandidateEvaluation, CandidateDocument,
 )
 
@@ -160,6 +160,7 @@ class EmployeeBankDetailsSerializer(serializers.ModelSerializer):
     department             = serializers.SerializerMethodField()
     account_number_display = serializers.SerializerMethodField()
     pan_number_display     = serializers.SerializerMethodField()
+    reviewed_by_name       = serializers.SerializerMethodField()
 
     class Meta:
         model  = EmployeeBankDetails
@@ -171,15 +172,24 @@ class EmployeeBankDetailsSerializer(serializers.ModelSerializer):
             'ifsc_code', 'branch_name', 'upi_id',
             'pan_number',              # write-only
             'pan_number_display',      # read path — masked or full
+            'status', 'reviewed_by', 'reviewed_by_name', 'reviewed_at', 'review_note',
             'created_at', 'updated_at',
         ]
         extra_kwargs = {
+            'employee':       {'required': False},  # auto-assigned for non-HR users in perform_create
             'account_number': {'write_only': True},
             'pan_number':     {'write_only': True, 'required': False, 'allow_blank': True},
+            'status':         {'read_only': True},
+            'reviewed_by':    {'read_only': True},
+            'reviewed_at':    {'read_only': True},
+            'review_note':    {'read_only': True},
         }
 
     def get_department(self, obj):
         return obj.employee.department.name if obj.employee.department else None
+
+    def get_reviewed_by_name(self, obj):
+        return obj.reviewed_by.full_name if obj.reviewed_by else None
 
     def get_account_number_display(self, obj):
         """HR+ sees full account number; everyone else sees last 4 digits masked."""
@@ -198,6 +208,15 @@ class EmployeeBankDetailsSerializer(serializers.ModelSerializer):
             return obj.pan_number
         p = obj.pan_number
         return f'*****{p[5:9]}X' if len(p) >= 10 else '*****'
+
+
+class BankDetailsChangeLogSerializer(serializers.ModelSerializer):
+    changed_by_name = serializers.CharField(source='changed_by.full_name', read_only=True)
+
+    class Meta:
+        model  = BankDetailsChangeLog
+        fields = ['id', 'changed_by', 'changed_by_name', 'field_name',
+                  'old_value', 'new_value', 'change_type', 'changed_at']
 
 
 # ── Salary Structure ──────────────────────────────────────────────────────────

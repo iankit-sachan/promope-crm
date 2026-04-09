@@ -34,7 +34,7 @@ from django.shortcuts import get_object_or_404
 from .constants import DEFAULT_LEAVE_ALLOWANCE
 from .models import (
     LeaveRequest, LeaveBalance, HRDocument, RecruitmentPosition, Applicant,
-    EmployeeBankDetails, SalaryStructure, SalaryPayment, Payslip,
+    EmployeeBankDetails, BankDetailsChangeLog, SalaryStructure, SalaryPayment, Payslip,
     JobPosition, Candidate, Interview, CandidateEvaluation, CandidateDocument,
 )
 from .serializers import (
@@ -44,6 +44,7 @@ from .serializers import (
     RecruitmentPositionSerializer,
     ApplicantSerializer,
     EmployeeBankDetailsSerializer,
+    BankDetailsChangeLogSerializer,
     SalaryStructureSerializer,
     SalaryPaymentSerializer,
     PayslipSerializer,
@@ -907,13 +908,61 @@ class SalaryDetailView(generics.RetrieveUpdateAPIView):
 
 # ── Bank Details ──────────────────────────────────────────────────────────────
 
+def _mask_sensitive(field_name, value):
+    """Mask account_number and pan_number for change logs."""
+    if not value:
+        return value
+    if field_name == 'account_number' and len(value) >= 4:
+        return f'****{value[-4:]}'
+    if field_name == 'pan_number' and len(value) >= 4:
+        return f'****{value[-4:]}'
+    return value
+
+
+def _log_bank_changes(instance, user, old_data, change_type='updated'):
+    """Create BankDetailsChangeLog entries for changed fields."""
+    tracked = ['account_holder_name', 'bank_name', 'account_number',
+               'ifsc_code', 'branch_name', 'upi_id', 'pan_number']
+    for field in tracked:
+        new_val = getattr(instance, field, '') or ''
+        old_val = old_data.get(field, '') or ''
+        if new_val != old_val:
+            BankDetailsChangeLog.objects.create(
+                bank_details=instance,
+                changed_by=user,
+                field_name=field,
+                old_value=_mask_sensitive(field, old_val),
+                new_value=_mask_sensitive(field, new_val),
+                change_type=change_type,
+            )
+
+
+def _notify_hr_bank(instance, action='submitted'):
+    from apps.authentication.models import User as AuthUser
+    hr_users = AuthUser.objects.filter(role__in=['founder', 'admin', 'hr'], is_active=True)
+    title = 'Bank Details Submitted' if action == 'submitted' else 'Bank Details Updated'
+    for hr_user in hr_users:
+        create_notification(
+            recipient=hr_user,
+            title=title,
+            message=f'{instance.employee.full_name} has {action} their bank details for review.',
+            type='system',
+            priority='normal',
+            target_type='bank_details',
+            target_id=instance.id,
+            link='/hr/bank-details',
+        )
+
+
 class BankDetailsListCreateView(generics.ListCreateAPIView):
     serializer_class = EmployeeBankDetailsSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
-        qs   = EmployeeBankDetails.objects.select_related('employee', 'employee__department')
+        qs   = EmployeeBankDetails.objects.select_related(
+            'employee', 'employee__department', 'reviewed_by',
+        )
         if not user.is_hr_or_above:
             try:
                 return qs.filter(employee=user.employee_profile)
@@ -924,6 +973,8 @@ class BankDetailsListCreateView(generics.ListCreateAPIView):
             qs = qs.filter(employee_id=p['employee'])
         if p.get('department'):
             qs = qs.filter(employee__department_id=p['department'])
+        if p.get('status'):
+            qs = qs.filter(status=p['status'])
         if p.get('search'):
             qs = qs.filter(
                 db_models.Q(employee__full_name__icontains=p['search']) |
@@ -933,26 +984,37 @@ class BankDetailsListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         user = self.request.user
+        extra = {}
+
         if not user.is_hr_or_above:
-            # Employees can only create their own bank details
             try:
-                emp = user.employee_profile
+                extra['employee'] = user.employee_profile
             except Exception:
                 from rest_framework.exceptions import PermissionDenied
                 raise PermissionDenied('No employee profile found.')
-            instance = serializer.save(employee=emp)
+            extra['status'] = 'pending'
         else:
-            instance = serializer.save()
+            extra['status'] = 'approved'
+            extra['reviewed_by'] = user
+            extra['reviewed_at'] = timezone.now()
+
+        instance = serializer.save(**extra)
+
+        # Log all initial field values as 'created' change entries
+        _log_bank_changes(instance, user, {}, change_type='created')
 
         log_activity(
             actor=user,
             verb='bank_details_updated',
-            description=f'Bank details added/updated for {instance.employee.full_name}',
+            description=f'Bank details added for {instance.employee.full_name}',
             target_type='bank_details',
             target_id=instance.id,
             target_name=instance.employee.full_name,
             ip_address=get_client_ip(self.request),
         )
+
+        if not user.is_hr_or_above:
+            _notify_hr_bank(instance, action='submitted')
 
 
 class BankDetailsDetailView(generics.RetrieveUpdateAPIView):
@@ -961,7 +1023,9 @@ class BankDetailsDetailView(generics.RetrieveUpdateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        qs   = EmployeeBankDetails.objects.select_related('employee', 'employee__department')
+        qs   = EmployeeBankDetails.objects.select_related(
+            'employee', 'employee__department', 'reviewed_by',
+        )
         if not user.is_hr_or_above:
             try:
                 return qs.filter(employee=user.employee_profile)
@@ -970,9 +1034,31 @@ class BankDetailsDetailView(generics.RetrieveUpdateAPIView):
         return qs
 
     def perform_update(self, serializer):
-        instance = serializer.save()
+        instance = serializer.instance
+        user = self.request.user
+
+        # Capture old values before save
+        old_data = {
+            'account_holder_name': instance.account_holder_name,
+            'bank_name':           instance.bank_name,
+            'account_number':      instance.account_number,
+            'ifsc_code':           instance.ifsc_code,
+            'branch_name':         instance.branch_name,
+            'upi_id':              instance.upi_id,
+            'pan_number':          instance.pan_number,
+        }
+
+        extra = {}
+        if not user.is_hr_or_above:
+            extra['status'] = 'pending'
+            extra['review_note'] = ''
+
+        instance = serializer.save(**extra)
+
+        _log_bank_changes(instance, user, old_data, change_type='updated')
+
         log_activity(
-            actor=self.request.user,
+            actor=user,
             verb='bank_details_updated',
             description=f'Bank details updated for {instance.employee.full_name}',
             target_type='bank_details',
@@ -980,6 +1066,105 @@ class BankDetailsDetailView(generics.RetrieveUpdateAPIView):
             target_name=instance.employee.full_name,
             ip_address=get_client_ip(self.request),
         )
+
+        if not user.is_hr_or_above:
+            _notify_hr_bank(instance, action='updated')
+
+
+@api_view(['PATCH'])
+@permission_classes([IsHROrAbove])
+def bank_details_review(request, pk):
+    """Approve or reject bank details. PATCH /api/hr/bank-details/<pk>/review/"""
+    try:
+        bd = EmployeeBankDetails.objects.select_related('employee').get(pk=pk)
+    except EmployeeBankDetails.DoesNotExist:
+        return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    action = request.data.get('action')
+    if action not in ('approve', 'reject'):
+        return Response({'detail': 'action must be "approve" or "reject".'}, status=status.HTTP_400_BAD_REQUEST)
+
+    bd.status      = 'approved' if action == 'approve' else 'rejected'
+    bd.reviewed_by = request.user
+    bd.reviewed_at = timezone.now()
+    bd.review_note = request.data.get('review_note', '')
+    bd.save()
+
+    # Notify the employee
+    emp_user = bd.employee.user
+    status_label = 'approved' if action == 'approve' else 'rejected'
+    create_notification(
+        recipient=emp_user,
+        title=f'Bank Details {status_label.title()}',
+        message=f'Your bank details have been {status_label} by {request.user.full_name}.'
+                + (f' Note: {bd.review_note}' if bd.review_note else ''),
+        type='system',
+        priority='normal',
+        target_type='bank_details',
+        target_id=bd.id,
+        link='/my-bank-details',
+    )
+
+    log_activity(
+        actor=request.user,
+        verb='bank_details_reviewed',
+        description=f'Bank details {status_label} for {bd.employee.full_name}',
+        target_type='bank_details',
+        target_id=bd.id,
+        target_name=bd.employee.full_name,
+        ip_address=get_client_ip(request),
+    )
+
+    return Response(EmployeeBankDetailsSerializer(bd, context={'request': request}).data)
+
+
+@api_view(['GET'])
+@permission_classes([IsHROrAbove])
+def bank_details_change_logs(request, pk):
+    """Get change history for a bank detail record. GET /api/hr/bank-details/<pk>/history/"""
+    logs = BankDetailsChangeLog.objects.filter(
+        bank_details_id=pk,
+    ).select_related('changed_by').order_by('-changed_at')
+    return Response(BankDetailsChangeLogSerializer(logs, many=True).data)
+
+
+@api_view(['GET'])
+@permission_classes([IsHROrAbove])
+def bank_details_export(request):
+    """Export bank details as CSV. GET /api/hr/bank-details/export/"""
+    qs = EmployeeBankDetails.objects.select_related(
+        'employee', 'employee__department',
+    ).order_by('employee__full_name')
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow([
+        'Employee ID', 'Employee Name', 'Department', 'Bank Name',
+        'Account Number', 'IFSC Code', 'Branch', 'UPI ID',
+        'PAN Number', 'Status', 'Last Updated',
+    ])
+    for bd in qs:
+        acct = bd.account_number
+        acct_masked = f'****{acct[-4:]}' if len(acct) >= 4 else '****'
+        pan  = bd.pan_number or ''
+        pan_masked  = f'****{pan[-4:]}' if len(pan) >= 4 else (pan or '—')
+        writer.writerow([
+            bd.employee.employee_id,
+            bd.employee.full_name,
+            bd.employee.department.name if bd.employee.department else '—',
+            bd.bank_name,
+            acct_masked,
+            bd.ifsc_code,
+            bd.branch_name or '—',
+            bd.upi_id or '—',
+            pan_masked,
+            bd.status,
+            bd.updated_at.strftime('%Y-%m-%d %H:%M'),
+        ])
+
+    resp = HttpResponse(buf.getvalue(), content_type='text/csv')
+    resp['Content-Disposition'] = 'attachment; filename="bank_details_export.csv"'
+    return resp
 
 
 # ── Salary Payments ───────────────────────────────────────────────────────────
