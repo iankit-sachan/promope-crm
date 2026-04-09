@@ -54,6 +54,7 @@ import RemoteControlPage from './pages/RemoteControlPage'
 // Activity Tracking pages
 import ActivityMonitorDashboard from './pages/ActivityMonitorDashboard'
 import { useAppVersion } from './hooks/useAppVersion'
+import MyBankDetailsPage        from './pages/MyBankDetailsPage'
 import DailyReportPage          from './pages/DailyReportPage'
 import ActivityLogsPage         from './pages/ActivityLogsPage'
 import TimeTrackingPage         from './pages/TimeTrackingPage'
@@ -153,6 +154,7 @@ export default function App() {
           </ProtectedRoute>
         } />
         <Route path="/my-attendance" element={<MyAttendancePage />} />
+        <Route path="/my-bank-details" element={<MyBankDetailsPage />} />
 
         {/* Manager-only pages */}
         <Route path="/manager" element={

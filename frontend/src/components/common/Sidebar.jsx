@@ -4,7 +4,7 @@ import {
   BarChart3, Settings, LogOut, Zap, ChevronRight,
   ClipboardCheck, FileBarChart2, MonitorDot, CalendarDays, UserCheck, MessageSquare,
   HeartHandshake, Users2, CalendarOff, FileText, Briefcase, BarChart2,
-  Wallet, BadgeDollarSign, CreditCard, FileDown,
+  Wallet, BadgeDollarSign, CreditCard, FileDown, Landmark,
   Activity, BookOpen, ScrollText, Timer,
   Target, UserSearch, Kanban, ClipboardList, Monitor, X, ShieldCheck,
 } from 'lucide-react'
@@ -48,6 +48,7 @@ const navItems = [
   { to: '/hr/salary',       label: 'Salary Mgmt',    icon: BadgeDollarSign,  roles: ['founder','admin','hr'] },
   { to: '/hr/bank-details', label: 'Bank Details',   icon: CreditCard,       roles: ['founder','admin','hr'] },
   { to: '/payslips',        label: 'My Payslips',    icon: FileDown,         roles: ['founder','admin','hr','manager','employee'] },
+  { to: '/my-bank-details', label: 'Bank Details',   icon: Landmark,         roles: ['founder','admin','hr','manager','employee'] },
 
   // ── Remote Control ────────────────────────────────────────────────────────
   { to: '/remote-control',   label: 'Remote Control',   icon: Monitor,   roles: ['founder','admin','manager'] },

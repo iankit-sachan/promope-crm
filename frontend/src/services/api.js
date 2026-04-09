@@ -286,6 +286,9 @@ export const payrollService = {
   bankList:        (params)   => api.get('/hr/bank-details/', { params }),
   bankCreate:      (data)     => api.post('/hr/bank-details/', data),
   bankUpdate:      (id, data) => api.patch(`/hr/bank-details/${id}/`, data),
+  bankReview:      (id, data) => api.patch(`/hr/bank-details/${id}/review/`, data),
+  bankHistory:     (id)       => api.get(`/hr/bank-details/${id}/history/`),
+  bankExport:      ()         => api.get('/hr/bank-details/export/', { responseType: 'blob' }),
 
   // Salary payments
   paymentList:     (params)   => api.get('/hr/payments/', { params }),

@@ -42,8 +42,11 @@ urlpatterns = [
     path('salaries/<int:pk>/',          views.SalaryDetailView.as_view(),       name='hr-salary-detail'),
 
     # Bank details
-    path('bank-details/',               views.BankDetailsListCreateView.as_view(), name='hr-bank-list'),
-    path('bank-details/<int:pk>/',      views.BankDetailsDetailView.as_view(),     name='hr-bank-detail'),
+    path('bank-details/',                  views.BankDetailsListCreateView.as_view(), name='hr-bank-list'),
+    path('bank-details/export/',           views.bank_details_export,                 name='hr-bank-export'),
+    path('bank-details/<int:pk>/',         views.BankDetailsDetailView.as_view(),     name='hr-bank-detail'),
+    path('bank-details/<int:pk>/review/',  views.bank_details_review,                 name='hr-bank-review'),
+    path('bank-details/<int:pk>/history/', views.bank_details_change_logs,            name='hr-bank-history'),
 
     # Salary payments
     path('payments/',                   views.PaymentListCreateView.as_view(),  name='hr-payment-list'),
