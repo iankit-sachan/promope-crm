@@ -209,6 +209,18 @@ class EmployeeBankDetailsSerializer(serializers.ModelSerializer):
         p = obj.pan_number
         return f'*****{p[5:9]}X' if len(p) >= 10 else '*****'
 
+    def to_representation(self, instance):
+        """Employees see only status info — no bank details. HR+ sees everything."""
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+        if request and not request.user.is_hr_or_above:
+            # Strip all sensitive bank fields — employee sees only status
+            for field in ('account_holder_name', 'bank_name', 'account_number_display',
+                          'ifsc_code', 'branch_name', 'upi_id', 'pan_number_display',
+                          'reviewed_by', 'reviewed_by_name', 'reviewed_at'):
+                data.pop(field, None)
+        return data
+
 
 class BankDetailsChangeLogSerializer(serializers.ModelSerializer):
     changed_by_name = serializers.CharField(source='changed_by.full_name', read_only=True)
