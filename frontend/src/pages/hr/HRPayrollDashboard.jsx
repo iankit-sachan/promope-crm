@@ -188,6 +188,7 @@ export default function HRPayrollDashboard() {
   const [deptFilter,   setDeptFilter]   = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [markPaidRow,  setMarkPaidRow]  = useState(null)
+  const [bankViewRow,  setBankViewRow]  = useState(null)
   const qc = useQueryClient()
 
   const { data, isLoading } = useQuery({
@@ -427,9 +428,11 @@ export default function HRPayrollDashboard() {
                     <td className="px-4 py-3 text-sm text-slate-400">{row.department || '—'}</td>
                     <td className="px-4 py-3">
                       {row.bank_status === 'approved' ? (
-                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-green-500/10 text-green-400">
+                        <button onClick={() => setBankViewRow(row)}
+                          className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors cursor-pointer"
+                          title="Click to view bank details">
                           {row.bank_name || 'Approved'}
-                        </span>
+                        </button>
                       ) : row.bank_status === 'pending' ? (
                         <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400">Pending</span>
                       ) : row.bank_status === 'rejected' ? (
@@ -497,6 +500,63 @@ export default function HRPayrollDashboard() {
           onClose={() => setMarkPaidRow(null)}
           onSave={handleMarkPaidSave}
         />
+      )}
+
+      {/* Bank Details Popup — view anytime by clicking bank name */}
+      {bankViewRow && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-800 rounded-xl border border-slate-700 w-full max-w-md fade-in">
+            <div className="flex items-center justify-between p-5 border-b border-slate-700">
+              <div>
+                <h3 className="font-semibold text-slate-200">{bankViewRow.employee_name}</h3>
+                <p className="text-xs text-slate-500">{bankViewRow.employee_code}</p>
+              </div>
+              <button onClick={() => setBankViewRow(null)} className="text-slate-400 hover:text-slate-200 text-xl leading-none">&times;</button>
+            </div>
+            <div className="p-5">
+              <div className="border border-indigo-500/20 bg-indigo-500/5 rounded-lg p-4 space-y-2.5">
+                <p className="text-xs font-semibold text-indigo-400 uppercase tracking-wide mb-2">Bank Account Details</p>
+                <div className="grid grid-cols-2 gap-2.5 text-sm">
+                  <div>
+                    <p className="text-[11px] text-slate-500">Account Holder</p>
+                    <p className="text-slate-200">{bankViewRow.account_holder_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-slate-500">Bank</p>
+                    <p className="text-slate-200">{bankViewRow.bank_name}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-[11px] text-slate-500">Account Number</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-slate-200 font-mono">{bankViewRow.account_number}</p>
+                      <CopyBtn value={bankViewRow.account_number} />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-slate-500">IFSC Code</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-slate-200 font-mono">{bankViewRow.ifsc_code}</p>
+                      <CopyBtn value={bankViewRow.ifsc_code} />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-slate-500">Branch</p>
+                    <p className="text-slate-300">{bankViewRow.branch_name || '—'}</p>
+                  </div>
+                  {bankViewRow.upi_id && (
+                    <div className="col-span-2">
+                      <p className="text-[11px] text-slate-500">UPI ID</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-slate-200">{bankViewRow.upi_id}</p>
+                        <CopyBtn value={bankViewRow.upi_id} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
