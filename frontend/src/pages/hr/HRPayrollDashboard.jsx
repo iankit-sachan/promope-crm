@@ -4,7 +4,7 @@ import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts'
-import { Wallet, UserCheck, Clock, Users, Download, CheckCircle, AlertTriangle, Copy, Check } from 'lucide-react'
+import { Wallet, UserCheck, Clock, Users, Download, CheckCircle, AlertTriangle, Copy, Check, Eye } from 'lucide-react'
 import { payrollService, departmentService } from '../../services/api'
 import { formatCurrency, initials } from '../../utils/helpers'
 import StatCard from '../../components/common/StatCard'
@@ -477,6 +477,15 @@ export default function HRPayrollDashboard() {
                             className="px-2 py-1 text-xs bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30 rounded-lg border border-indigo-500/20"
                           >
                             Gen Payslip
+                          </button>
+                        )}
+                        {row.payment_status === 'paid' && row.bank_status === 'approved' && (
+                          <button
+                            onClick={() => setBankViewRow(row)}
+                            className="px-2 py-1 text-xs bg-slate-600/20 text-slate-300 hover:bg-slate-600/30 rounded-lg border border-slate-500/20 flex items-center gap-1"
+                            title="View bank account details"
+                          >
+                            <Eye className="w-3 h-3" /> View Details
                           </button>
                         )}
                         {row.has_payslip && (
