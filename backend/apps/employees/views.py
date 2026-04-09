@@ -83,6 +83,12 @@ class EmployeeDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_destroy(self, instance):
         name = instance.full_name
+        # Deactivate the linked User account so they can't login
+        user_account = instance.user
+        user_account.is_active = False
+        user_account.is_online = False
+        user_account.save(update_fields=['is_active', 'is_online'])
+
         log_activity(
             actor=self.request.user,
             verb='employee_deleted',
