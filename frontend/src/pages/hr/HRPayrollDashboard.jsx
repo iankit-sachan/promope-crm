@@ -126,6 +126,15 @@ function MarkPaidModal({ row, onClose, onSave }) {
                     </div>
                   </div>
                 )}
+                {row.passbook_photo_url && (
+                  <div className="col-span-2 pt-1">
+                    <p className="text-[11px] text-slate-500 mb-1">Passbook Photo</p>
+                    <a href={row.passbook_photo_url} target="_blank" rel="noopener noreferrer">
+                      <img src={row.passbook_photo_url} alt="Passbook"
+                        className="max-h-24 rounded-lg border border-slate-600 hover:border-indigo-500 transition-colors cursor-pointer" />
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           ) : (
@@ -550,6 +559,15 @@ export default function HRPayrollDashboard() {
                         <p className="text-slate-200">{bankViewRow.upi_id}</p>
                         <CopyBtn value={bankViewRow.upi_id} />
                       </div>
+                    </div>
+                  )}
+                  {bankViewRow.passbook_photo_url && (
+                    <div className="col-span-2 pt-1">
+                      <p className="text-[11px] text-slate-500 mb-1">Passbook Photo</p>
+                      <a href={bankViewRow.passbook_photo_url} target="_blank" rel="noopener noreferrer">
+                        <img src={bankViewRow.passbook_photo_url} alt="Passbook"
+                          className="max-h-24 rounded-lg border border-slate-600 hover:border-indigo-500 transition-colors cursor-pointer" />
+                      </a>
                     </div>
                   )}
                 </div>

@@ -242,6 +242,7 @@ class EmployeeBankDetails(models.Model):
     branch_name          = models.CharField(max_length=255, blank=True)
     upi_id               = models.CharField(max_length=100, blank=True)
     pan_number           = models.CharField(max_length=10, blank=True)  # 10-char Indian PAN
+    passbook_photo       = models.ImageField(upload_to='bank_details/passbooks/', null=True, blank=True)
 
     # Approval workflow
     status               = models.CharField(max_length=20, choices=Status.choices, default=Status.APPROVED)

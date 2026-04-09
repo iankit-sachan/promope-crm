@@ -206,6 +206,16 @@ function ReviewModal({ record, onClose, onReview }) {
                 <div><span className="text-slate-500 text-xs uppercase">Last Updated</span><p className="text-slate-200 mt-0.5">{formatDate(record.updated_at)}</p></div>
               </div>
 
+              {record.passbook_photo_url && (
+                <div className="mt-4">
+                  <p className="text-slate-500 text-xs uppercase mb-2">Passbook Photo</p>
+                  <a href={record.passbook_photo_url} target="_blank" rel="noopener noreferrer">
+                    <img src={record.passbook_photo_url} alt="Passbook"
+                      className="max-w-[250px] rounded-lg border border-slate-600 hover:border-indigo-500 transition-colors cursor-pointer" />
+                  </a>
+                </div>
+              )}
+
               {record.reviewed_by_name && (
                 <div className="mt-4 px-3 py-2 bg-slate-700/30 rounded-lg text-sm">
                   <span className="text-slate-400">Reviewed by </span>
