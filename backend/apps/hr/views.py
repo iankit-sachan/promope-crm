@@ -815,6 +815,7 @@ def payroll_dashboard(request):
             'payment_status': pstatus,
             'payment_id':     payment.id if payment else None,
             'has_payslip':    hasattr(payment, 'payslip') if payment else False,
+            'payslip_auto_generated': payment.payslip.is_auto_generated if (payment and hasattr(payment, 'payslip')) else None,
         })
 
     return Response({
@@ -1241,7 +1242,8 @@ class PaymentDetailView(generics.RetrieveUpdateAPIView):
 
     def get_queryset(self):
         return SalaryPayment.objects.select_related(
-            'employee', 'employee__department', 'processed_by'
+            'employee', 'employee__department', 'employee__bank_details',
+            'employee__salary_structure', 'processed_by',
         )
 
     def perform_update(self, serializer):
@@ -1260,15 +1262,45 @@ class PaymentDetailView(generics.RetrieveUpdateAPIView):
             if update_fields:
                 payment.save(update_fields=update_fields)
 
-            # Notify employee
+            # Auto-generate payslip
+            payslip, _ = _create_payslip_for_payment(
+                payment, self.request.user, is_auto=True,
+            )
+            if payslip:
+                log_activity(
+                    actor=self.request.user,
+                    verb='payslip_generated',
+                    description=(
+                        f'Payslip auto-generated for {payment.employee.full_name} '
+                        f'({payment.month}/{payment.year})'
+                    ),
+                    target_type='payslip',
+                    target_id=payslip.id,
+                    target_name=payment.employee.full_name,
+                    ip_address=get_client_ip(self.request),
+                )
+
+            # Build rich notification with bank info
+            month_name = calendar.month_name[payment.month]
+            base_msg = f'Your salary of ₹{payment.amount_paid} for {month_name} {payment.year}'
+
+            bank_info = ' has been paid'
+            try:
+                bank = payment.employee.bank_details
+                if bank.account_number:
+                    tail = bank.account_number[-4:] if len(bank.account_number) >= 4 else '****'
+                    bank_info = f' has been credited to your {bank.bank_name} account (****{tail})'
+            except EmployeeBankDetails.DoesNotExist:
+                pass
+
+            payslip_info = '. Your payslip is ready for download.' if payslip else '.'
+            message = base_msg + bank_info + payslip_info
+
             try:
                 create_notification(
                     recipient=payment.employee.user,
                     title='Salary Paid',
-                    message=(
-                        f'Your salary of ₹{payment.amount_paid} for '
-                        f'{calendar.month_name[payment.month]} {payment.year} has been paid.'
-                    ),
+                    message=message,
                     type='system',
                     priority='high',
                     target_type='payment',
@@ -1293,6 +1325,29 @@ class PaymentDetailView(generics.RetrieveUpdateAPIView):
 
 
 # ── Payslips ──────────────────────────────────────────────────────────────────
+
+def _create_payslip_for_payment(payment, generated_by_user, is_auto=False):
+    """Create a payslip for a payment. Returns (payslip, error_string)."""
+    if hasattr(payment, 'payslip'):
+        return payment.payslip, None
+    try:
+        ss = payment.employee.salary_structure
+    except SalaryStructure.DoesNotExist:
+        return None, 'No salary structure found for this employee.'
+    payslip = Payslip.objects.create(
+        employee          = payment.employee,
+        payment           = payment,
+        base_salary       = ss.base_salary,
+        hra               = ss.hra,
+        allowances        = ss.allowances,
+        bonus             = ss.bonus,
+        deductions        = ss.deductions,
+        tax               = ss.tax,
+        net_salary        = ss.net_salary,
+        generated_by      = generated_by_user,
+        is_auto_generated = is_auto,
+    )
+    return payslip, None
 
 class PayslipListView(generics.ListAPIView):
     serializer_class   = PayslipSerializer
@@ -1334,33 +1389,13 @@ def generate_payslip(request):
     except SalaryPayment.DoesNotExist:
         return Response({'detail': 'Payment not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-    # Check if payslip already exists
     if hasattr(payment, 'payslip'):
         return Response({'detail': 'Payslip already generated for this payment.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Get salary structure for snapshot
-    try:
-        ss = payment.employee.salary_structure
-    except SalaryStructure.DoesNotExist:
-        return Response(
-            {'detail': 'No salary structure found for this employee.'},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+    payslip, error = _create_payslip_for_payment(payment, request.user, is_auto=False)
+    if error:
+        return Response({'detail': error}, status=status.HTTP_400_BAD_REQUEST)
 
-    payslip = Payslip.objects.create(
-        employee     = payment.employee,
-        payment      = payment,
-        base_salary  = ss.base_salary,
-        hra          = ss.hra,
-        allowances   = ss.allowances,
-        bonus        = ss.bonus,
-        deductions   = ss.deductions,
-        tax          = ss.tax,
-        net_salary   = ss.net_salary,
-        generated_by = request.user,
-    )
-
-    # Notify employee
     try:
         month_name = calendar.month_name[payment.month]
         create_notification(

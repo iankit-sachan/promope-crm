@@ -261,7 +261,8 @@ class SalaryPaymentSerializer(serializers.ModelSerializer):
     employee_code     = serializers.CharField(source='employee.employee_id', read_only=True)
     department        = serializers.SerializerMethodField()
     processed_by_name = serializers.SerializerMethodField()
-    has_payslip       = serializers.SerializerMethodField()
+    has_payslip            = serializers.SerializerMethodField()
+    payslip_auto_generated = serializers.SerializerMethodField()
 
     class Meta:
         model  = SalaryPayment
@@ -270,7 +271,7 @@ class SalaryPaymentSerializer(serializers.ModelSerializer):
             'month', 'year', 'amount_paid',
             'payment_status', 'payment_date', 'payment_method',
             'processed_by', 'processed_by_name',
-            'has_payslip', 'notes',
+            'has_payslip', 'payslip_auto_generated', 'notes',
             'created_at', 'updated_at',
         ]
         read_only_fields = ['processed_by', 'created_at', 'updated_at']
@@ -288,6 +289,11 @@ class SalaryPaymentSerializer(serializers.ModelSerializer):
 
     def get_has_payslip(self, obj):
         return hasattr(obj, 'payslip')
+
+    def get_payslip_auto_generated(self, obj):
+        if hasattr(obj, 'payslip'):
+            return obj.payslip.is_auto_generated
+        return None
 
 
 # ── Payslip ───────────────────────────────────────────────────────────────────

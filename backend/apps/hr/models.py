@@ -426,6 +426,7 @@ class Payslip(models.Model):
         null=True, blank=True,
         related_name='generated_payslips',
     )
+    is_auto_generated = models.BooleanField(default=False)
     generated_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
