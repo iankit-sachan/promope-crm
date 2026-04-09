@@ -51,9 +51,25 @@ function StarRating({ value }) {
 }
 
 function AddCandidateModal({ jobs, onClose, onSave, isSaving }) {
+  const qc = useQueryClient()
   const [form, setForm]   = useState({ candidate_name: '', email: '', phone: '',
     applied_position: '', linkedin_profile: '', portfolio_link: '', notes: '' })
   const [resume, setResume] = useState(null)
+  const [showNewJob, setShowNewJob] = useState(false)
+  const [newJobTitle, setNewJobTitle] = useState('')
+
+  const createJobMutation = useMutation({
+    mutationFn: (title) => hiringService.jobCreate({ job_title: title, job_description: title, job_status: 'open' }),
+    onSuccess: (res) => {
+      const newJob = res.data
+      qc.invalidateQueries({ queryKey: ['hiring-jobs'] })
+      setForm(f => ({ ...f, applied_position: String(newJob.id) }))
+      setNewJobTitle('')
+      setShowNewJob(false)
+      toast.success(`Job "${newJob.job_title}" created`)
+    },
+    onError: (err) => toast.error(err.response?.data?.job_title?.[0] || 'Failed to create job'),
+  })
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
@@ -110,11 +126,35 @@ function AddCandidateModal({ jobs, onClose, onSave, isSaving }) {
             </div>
             <div>
               <label className="label">Applied Position</label>
-              <select className="input w-full" value={form.applied_position}
-                onChange={e => set('applied_position', e.target.value)}>
-                <option value="">— Select job —</option>
-                {jobs.map(j => <option key={j.id} value={j.id}>{j.job_title}</option>)}
-              </select>
+              {!showNewJob ? (
+                <select className="input w-full" value={form.applied_position}
+                  onChange={e => {
+                    if (e.target.value === '__new__') { setShowNewJob(true) }
+                    else { set('applied_position', e.target.value) }
+                  }}>
+                  <option value="">— Select job —</option>
+                  <option value="__new__">+ Create New Job</option>
+                  {jobs.map(j => <option key={j.id} value={j.id}>{j.job_title}</option>)}
+                </select>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <input className="input flex-1" placeholder="Job title" value={newJobTitle}
+                    onChange={e => setNewJobTitle(e.target.value)} autoFocus
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') { e.preventDefault(); if (newJobTitle.trim()) createJobMutation.mutate(newJobTitle.trim()) }
+                      if (e.key === 'Escape') setShowNewJob(false)
+                    }} />
+                  <button type="button" disabled={!newJobTitle.trim() || createJobMutation.isPending}
+                    onClick={() => newJobTitle.trim() && createJobMutation.mutate(newJobTitle.trim())}
+                    className="p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg disabled:opacity-50">
+                    <Plus className="w-4 h-4" />
+                  </button>
+                  <button type="button" onClick={() => { setShowNewJob(false); setNewJobTitle('') }}
+                    className="p-2 hover:bg-slate-700 text-slate-400 rounded-lg">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
           <div>
