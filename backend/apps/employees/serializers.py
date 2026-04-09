@@ -30,6 +30,7 @@ class EmployeeListSerializer(serializers.ModelSerializer):
         return (timezone.now() - user.last_seen).total_seconds() <= 300  # 5 min
     tasks_in_progress = serializers.IntegerField(read_only=True)
     tasks_completed = serializers.IntegerField(read_only=True)
+    tasks_pending = serializers.IntegerField(read_only=True)
     productivity_score = serializers.FloatField(read_only=True)
     current_task = serializers.SerializerMethodField()
 

@@ -101,7 +101,7 @@ export default function TopBar({ onToggleSidebar, sidebarOpen }) {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search tasks, employees..."
+            placeholder="Search tasks..."
             className="input pl-9 py-2 bg-slate-700/60"
           />
           {searchQuery && (

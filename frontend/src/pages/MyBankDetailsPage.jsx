@@ -126,7 +126,6 @@ export default function MyBankDetailsPage() {
       if (form.pan_number) payload.append('pan_number', form.pan_number)
       payload.append('passbook_photo', form.passbook_photo)
       if (!record && isHrOrAbove && myEmployee) payload.append('employee', myEmployee.id)
-      if (!record) payload.append('account_number', form.account_number)
     } else {
       payload = {
         account_holder_name: form.account_holder_name,
@@ -138,7 +137,6 @@ export default function MyBankDetailsPage() {
       if (form.account_number) payload.account_number = form.account_number
       if (form.pan_number) payload.pan_number = form.pan_number
       if (!record && isHrOrAbove && myEmployee) payload.employee = myEmployee.id
-      if (!record) payload.account_number = form.account_number
     }
 
     if (record) {

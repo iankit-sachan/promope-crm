@@ -816,10 +816,11 @@ def payroll_dashboard(request):
             'payment_id':     payment.id if payment else None,
             'has_payslip':    hasattr(payment, 'payslip') if payment else False,
             'payslip_auto_generated': payment.payslip.is_auto_generated if (payment and hasattr(payment, 'payslip')) else None,
+            'payslip_id':            payment.payslip.id if (payment and hasattr(payment, 'payslip')) else None,
             'bank_status':          getattr(getattr(ss.employee, 'bank_details', None), 'status', None),
             'bank_name':            getattr(getattr(ss.employee, 'bank_details', None), 'bank_name', None),
             'account_holder_name':  getattr(getattr(ss.employee, 'bank_details', None), 'account_holder_name', None),
-            'account_number':       getattr(getattr(ss.employee, 'bank_details', None), 'account_number', None),
+            'account_number':       (lambda a: f'****{a[-4:]}' if a and len(a) >= 4 else a)(getattr(getattr(ss.employee, 'bank_details', None), 'account_number', None)),
             'ifsc_code':            getattr(getattr(ss.employee, 'bank_details', None), 'ifsc_code', None),
             'branch_name':          getattr(getattr(ss.employee, 'bank_details', None), 'branch_name', None),
             'upi_id':               getattr(getattr(ss.employee, 'bank_details', None), 'upi_id', None),
@@ -1069,6 +1070,8 @@ class BankDetailsDetailView(generics.RetrieveUpdateAPIView):
         if not user.is_hr_or_above:
             extra['status'] = 'pending'
             extra['review_note'] = ''
+            extra['reviewed_by'] = None
+            extra['reviewed_at'] = None
 
         instance = serializer.save(**extra)
 
@@ -1867,6 +1870,8 @@ class CandidateListCreate(generics.ListCreateAPIView):
     permission_classes = [IsHROrAbove]
 
     def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CandidateDetailSerializer
         return CandidateListSerializer
 
     def get_queryset(self):
@@ -2000,11 +2005,19 @@ def convert_to_employee(request, pk):
         )
         dept = Department.objects.filter(id=data.get('department')).first() if data.get('department') else None
 
+        import re as _re
+        last_emp = EmployeeModel.objects.order_by('-id').first()
+        next_id = (last_emp.id + 1) if last_emp else 1
+        emp_id = f'EMP-{next_id:04d}'
+        raw_phone = candidate.phone or ''
+        safe_phone = raw_phone if _re.match(r'^\+?1?\d{9,15}$', raw_phone) else ''
+
         employee = EmployeeModel.objects.create(
             user         = user,
+            employee_id  = emp_id,
             full_name    = candidate.candidate_name,
             email        = email,
-            phone        = candidate.phone or '',
+            phone        = safe_phone,
             department   = dept,
             role         = data.get('job_role') or (
                 candidate.applied_position.job_title if candidate.applied_position else 'Employee'
