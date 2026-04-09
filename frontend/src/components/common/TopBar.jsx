@@ -157,6 +157,12 @@ export default function TopBar({ onToggleSidebar, sidebarOpen }) {
                         !notif.is_read && 'bg-indigo-500/5'
                       )}
                       onClick={() => {
+                        if (!notif.is_read) {
+                          notificationService.markRead(notif.id).then(() => {
+                            qc.invalidateQueries({ queryKey: ['notifications'] })
+                            qc.invalidateQueries({ queryKey: ['notifications-count'] })
+                          })
+                        }
                         if (notif.link) navigate(notif.link)
                         setShowNotifications(false)
                       }}
