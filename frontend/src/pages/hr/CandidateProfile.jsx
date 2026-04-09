@@ -209,7 +209,7 @@ export default function CandidateProfile() {
     docMutation.mutate(fd)
   }
 
-  const [notes, setNotes] = useState('')
+  const [notes, setNotes] = useState(null)
 
   if (isLoading) return <div className="p-8 text-slate-500">Loading…</div>
   if (!candidate) return <div className="p-8 text-slate-500">Candidate not found.</div>
@@ -276,12 +276,12 @@ export default function CandidateProfile() {
             <textarea
               className="input w-full resize-none text-sm"
               rows={4}
-              defaultValue={candidate.notes}
+              value={notes !== null ? notes : (candidate.notes || '')}
               onChange={e => setNotes(e.target.value)}
               placeholder="Add notes about this candidate…"
             />
             <button
-              onClick={() => notesMutation.mutate(notes || candidate.notes)}
+              onClick={() => notesMutation.mutate(notes !== null ? notes : (candidate.notes || ''))}
               disabled={notesMutation.isPending}
               className="btn-primary text-sm py-1.5"
             >

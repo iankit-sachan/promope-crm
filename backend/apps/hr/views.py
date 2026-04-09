@@ -292,7 +292,7 @@ class LeaveDetailView(generics.RetrieveUpdateDestroyAPIView):
 @permission_classes([IsHROrAbove])
 def approve_leave(request, pk):
     try:
-        leave = LeaveRequest.objects.get(pk=pk)
+        leave = LeaveRequest.objects.select_for_update().get(pk=pk)
     except LeaveRequest.DoesNotExist:
         return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -508,12 +508,20 @@ class HRDocumentListCreateView(generics.ListCreateAPIView):
         return qs
 
     def perform_create(self, serializer):
+        user = self.request.user
         file = self.request.FILES.get('file')
         size = file.size if file else 0
-        doc  = serializer.save(
-            uploaded_by=self.request.user,
-            file_size=size,
-        )
+
+        # Non-HR users can only upload documents for themselves
+        extra = {'uploaded_by': user, 'file_size': size}
+        if not user.is_hr_or_above:
+            try:
+                extra['employee'] = user.employee_profile
+            except Exception:
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied('No employee profile found.')
+
+        doc = serializer.save(**extra)
 
         log_activity(
             actor=self.request.user,
@@ -2059,7 +2067,7 @@ def convert_to_employee(request, pk):
 
 class InterviewListCreate(generics.ListCreateAPIView):
     serializer_class   = InterviewSerializer
-    permission_classes = [IsManagerOrAbove]
+    permission_classes = [IsHROrAbove]
 
     def get_queryset(self):
         qs = Interview.objects.select_related('candidate', 'interviewer', 'scheduled_by')
@@ -2090,14 +2098,14 @@ class InterviewListCreate(generics.ListCreateAPIView):
 class InterviewDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset           = Interview.objects.select_related('candidate', 'interviewer')
     serializer_class   = InterviewSerializer
-    permission_classes = [IsManagerOrAbove]
+    permission_classes = [IsHROrAbove]
 
 
 # ── Evaluations ───────────────────────────────────────────────────────────────
 
 class EvaluationListCreate(generics.ListCreateAPIView):
     serializer_class   = CandidateEvaluationSerializer
-    permission_classes = [IsManagerOrAbove]
+    permission_classes = [IsHROrAbove]
 
     def get_queryset(self):
         qs = CandidateEvaluation.objects.select_related('candidate', 'interviewer')
@@ -2112,7 +2120,7 @@ class EvaluationListCreate(generics.ListCreateAPIView):
 class EvaluationDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset           = CandidateEvaluation.objects.select_related('candidate', 'interviewer')
     serializer_class   = CandidateEvaluationSerializer
-    permission_classes = [IsManagerOrAbove]
+    permission_classes = [IsHROrAbove]
 
 
 # ── Candidate Documents ───────────────────────────────────────────────────────

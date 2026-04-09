@@ -60,9 +60,7 @@ function EmployeeDashboard({ user }) {
 
   const { data: scoreData } = useQuery({
     queryKey: ['my-att-score'],
-    queryFn: () => import('../services/api').then(({ default: api }) =>
-      api.get('/attendance/my-score/').then(r => r.data)
-    ),
+    queryFn: () => attendanceService.myScore().then(r => r.data),
   })
 
   const { data: payslips } = useQuery({
