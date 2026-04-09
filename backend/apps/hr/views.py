@@ -790,7 +790,7 @@ def payroll_dashboard(request):
 
     # Per-employee rows
     structures_qs = SalaryStructure.objects.select_related(
-        'employee', 'employee__department'
+        'employee', 'employee__department', 'employee__bank_details'
     )
     if dept_filter:
         structures_qs = structures_qs.filter(employee__department_id=dept_filter)
@@ -816,6 +816,8 @@ def payroll_dashboard(request):
             'payment_id':     payment.id if payment else None,
             'has_payslip':    hasattr(payment, 'payslip') if payment else False,
             'payslip_auto_generated': payment.payslip.is_auto_generated if (payment and hasattr(payment, 'payslip')) else None,
+            'bank_status':    getattr(getattr(ss.employee, 'bank_details', None), 'status', None),
+            'bank_name':      getattr(getattr(ss.employee, 'bank_details', None), 'bank_name', None),
         })
 
     return Response({
