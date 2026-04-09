@@ -1213,24 +1213,71 @@ class PaymentListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         payment = serializer.save()
-        # Notify employee
-        try:
-            create_notification(
-                recipient=payment.employee.user,
-                title='Salary Payment Initiated',
-                message=f'Your salary for {calendar.month_name[payment.month]} {payment.year} has been recorded.',
-                type='system',
-                priority='normal',
-                target_type='payment',
-                target_id=payment.id,
-                link='/payslips',
-            )
-        except Exception:
-            pass
+        user = self.request.user
+
+        # If created directly as 'paid', auto-generate payslip + rich notification
+        if payment.payment_status == 'paid':
+            if not payment.processed_by:
+                payment.processed_by = user
+            if not payment.payment_date:
+                payment.payment_date = timezone.localtime(timezone.now()).date()
+            payment.save(update_fields=['processed_by', 'payment_date'])
+
+            # Reload with related objects for bank details
+            payment = SalaryPayment.objects.select_related(
+                'employee', 'employee__bank_details', 'employee__salary_structure',
+            ).get(pk=payment.pk)
+
+            payslip, _ = _create_payslip_for_payment(payment, user, is_auto=True)
+            if payslip:
+                log_activity(
+                    actor=user, verb='payslip_generated',
+                    description=f'Payslip auto-generated for {payment.employee.full_name} ({payment.month}/{payment.year})',
+                    target_type='payslip', target_id=payslip.id,
+                    target_name=payment.employee.full_name,
+                    ip_address=get_client_ip(self.request),
+                )
+
+            month_name = calendar.month_name[payment.month]
+            base_msg = f'Your salary of ₹{payment.amount_paid} for {month_name} {payment.year}'
+            bank_info = ' has been paid'
+            try:
+                bank = payment.employee.bank_details
+                if bank.account_number:
+                    tail = bank.account_number[-4:] if len(bank.account_number) >= 4 else '****'
+                    bank_info = f' has been credited to your {bank.bank_name} account (****{tail})'
+            except EmployeeBankDetails.DoesNotExist:
+                pass
+            payslip_info = '. Your payslip is ready for download.' if payslip else '.'
+
+            try:
+                create_notification(
+                    recipient=payment.employee.user,
+                    title='Salary Paid',
+                    message=base_msg + bank_info + payslip_info,
+                    type='system', priority='high',
+                    target_type='payment', target_id=payment.id,
+                    link='/payslips',
+                )
+            except Exception:
+                pass
+        else:
+            try:
+                create_notification(
+                    recipient=payment.employee.user,
+                    title='Salary Payment Initiated',
+                    message=f'Your salary for {calendar.month_name[payment.month]} {payment.year} has been recorded.',
+                    type='system', priority='normal',
+                    target_type='payment', target_id=payment.id,
+                    link='/payslips',
+                )
+            except Exception:
+                pass
+
         log_activity(
-            actor=self.request.user,
-            verb='salary_payment_created',
-            description=f'Salary payment created for {payment.employee.full_name} ({payment.month}/{payment.year})',
+            actor=user,
+            verb='salary_paid' if payment.payment_status == 'paid' else 'salary_payment_created',
+            description=f'Salary {"paid to" if payment.payment_status == "paid" else "payment created for"} {payment.employee.full_name} ({payment.month}/{payment.year})',
             target_type='payment',
             target_id=payment.id,
             target_name=payment.employee.full_name,
