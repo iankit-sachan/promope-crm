@@ -972,12 +972,20 @@ class BankDetailsListCreateView(generics.ListCreateAPIView):
         qs   = EmployeeBankDetails.objects.select_related(
             'employee', 'employee__department', 'reviewed_by',
         )
+        p = self.request.query_params
+
+        # ?mine=true — return only the current user's own bank details
+        if p.get('mine') == 'true':
+            try:
+                return qs.filter(employee=user.employee_profile)
+            except Exception:
+                return EmployeeBankDetails.objects.none()
+
         if not user.is_hr_or_above:
             try:
                 return qs.filter(employee=user.employee_profile)
             except Exception:
                 return EmployeeBankDetails.objects.none()
-        p = self.request.query_params
         if p.get('employee'):
             qs = qs.filter(employee_id=p['employee'])
         if p.get('department'):
