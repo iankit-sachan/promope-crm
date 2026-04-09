@@ -161,6 +161,7 @@ class EmployeeBankDetailsSerializer(serializers.ModelSerializer):
     account_number_display = serializers.SerializerMethodField()
     pan_number_display     = serializers.SerializerMethodField()
     reviewed_by_name       = serializers.SerializerMethodField()
+    passbook_photo_url     = serializers.SerializerMethodField()
 
     class Meta:
         model  = EmployeeBankDetails
@@ -172,6 +173,7 @@ class EmployeeBankDetailsSerializer(serializers.ModelSerializer):
             'ifsc_code', 'branch_name', 'upi_id',
             'pan_number',              # write-only
             'pan_number_display',      # read path — masked or full
+            'passbook_photo', 'passbook_photo_url',
             'status', 'reviewed_by', 'reviewed_by_name', 'reviewed_at', 'review_note',
             'created_at', 'updated_at',
         ]
@@ -179,6 +181,7 @@ class EmployeeBankDetailsSerializer(serializers.ModelSerializer):
             'employee':       {'required': False},  # auto-assigned for non-HR users in perform_create
             'account_number': {'write_only': True},
             'pan_number':     {'write_only': True, 'required': False, 'allow_blank': True},
+            'passbook_photo': {'required': False},
             'status':         {'read_only': True},
             'reviewed_by':    {'read_only': True},
             'reviewed_at':    {'read_only': True},
@@ -209,6 +212,13 @@ class EmployeeBankDetailsSerializer(serializers.ModelSerializer):
         p = obj.pan_number
         return f'*****{p[5:9]}X' if len(p) >= 10 else '*****'
 
+    def get_passbook_photo_url(self, obj):
+        if obj.passbook_photo:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.passbook_photo.url)
+            return obj.passbook_photo.url
+        return None
 
 
 class BankDetailsChangeLogSerializer(serializers.ModelSerializer):

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Landmark, Eye, EyeOff, Shield, Edit2, Plus, Building2, CreditCard, Hash, MapPin, Smartphone, FileText, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react'
+import { Landmark, Eye, EyeOff, Shield, Edit2, Plus, Building2, CreditCard, Hash, MapPin, Smartphone, FileText, Clock, CheckCircle, XCircle, AlertTriangle, Upload, Image } from 'lucide-react'
 import { payrollService, employeeService } from '../services/api'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
@@ -42,7 +42,17 @@ export default function MyBankDetailsPage() {
     branch_name: '',
     upi_id: '',
     pan_number: '',
+    passbook_photo: null,
   })
+  const [photoPreview, setPhotoPreview] = useState(null)
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setForm((p) => ({ ...p, passbook_photo: file }))
+      setPhotoPreview(URL.createObjectURL(file))
+    }
+  }
 
   // Reset form when entering edit mode
   const startEdit = () => {
@@ -54,7 +64,9 @@ export default function MyBankDetailsPage() {
       branch_name: record?.branch_name ?? '',
       upi_id: record?.upi_id ?? '',
       pan_number: '',
+      passbook_photo: null,
     })
+    setPhotoPreview(null)
     setShowAcct(false)
     setShowPan(false)
     setEditing(true)
@@ -69,7 +81,9 @@ export default function MyBankDetailsPage() {
       branch_name: '',
       upi_id: '',
       pan_number: '',
+      passbook_photo: null,
     })
+    setPhotoPreview(null)
     setShowAcct(false)
     setShowPan(false)
     setEditing(true)
@@ -97,24 +111,39 @@ export default function MyBankDetailsPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    const payload = {
-      account_holder_name: form.account_holder_name,
-      bank_name: form.bank_name,
-      ifsc_code: form.ifsc_code.toUpperCase(),
-      branch_name: form.branch_name,
-      upi_id: form.upi_id,
+    const hasFile = !!form.passbook_photo
+
+    // Use FormData when file is present, otherwise JSON
+    let payload
+    if (hasFile) {
+      payload = new FormData()
+      payload.append('account_holder_name', form.account_holder_name)
+      payload.append('bank_name', form.bank_name)
+      payload.append('ifsc_code', form.ifsc_code.toUpperCase())
+      payload.append('branch_name', form.branch_name)
+      payload.append('upi_id', form.upi_id)
+      if (form.account_number) payload.append('account_number', form.account_number)
+      if (form.pan_number) payload.append('pan_number', form.pan_number)
+      payload.append('passbook_photo', form.passbook_photo)
+      if (!record && isHrOrAbove && myEmployee) payload.append('employee', myEmployee.id)
+      if (!record) payload.append('account_number', form.account_number)
+    } else {
+      payload = {
+        account_holder_name: form.account_holder_name,
+        bank_name: form.bank_name,
+        ifsc_code: form.ifsc_code.toUpperCase(),
+        branch_name: form.branch_name,
+        upi_id: form.upi_id,
+      }
+      if (form.account_number) payload.account_number = form.account_number
+      if (form.pan_number) payload.pan_number = form.pan_number
+      if (!record && isHrOrAbove && myEmployee) payload.employee = myEmployee.id
+      if (!record) payload.account_number = form.account_number
     }
-    if (form.account_number) payload.account_number = form.account_number
-    if (form.pan_number) payload.pan_number = form.pan_number
 
     if (record) {
       updateBank.mutate({ id: record.id, data: payload })
     } else {
-      payload.account_number = form.account_number
-      // HR+ users need to explicitly pass their employee ID
-      if (isHrOrAbove && myEmployee) {
-        payload.employee = myEmployee.id
-      }
       createBank.mutate(payload)
     }
   }
@@ -214,6 +243,16 @@ export default function MyBankDetailsPage() {
               })
             } />
           </div>
+
+          {record.passbook_photo_url && (
+            <div className="pt-4 border-t border-slate-700">
+              <p className="text-[11px] text-slate-500 uppercase tracking-wide mb-2">Passbook Photo</p>
+              <a href={record.passbook_photo_url} target="_blank" rel="noopener noreferrer">
+                <img src={record.passbook_photo_url} alt="Passbook"
+                  className="max-w-[200px] rounded-lg border border-slate-600 hover:border-indigo-500 transition-colors cursor-pointer" />
+              </a>
+            </div>
+          )}
         </div>
       )}
 
@@ -353,6 +392,27 @@ export default function MyBankDetailsPage() {
                   {showPan ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+            </div>
+          </div>
+
+          {/* Passbook photo upload */}
+          <div>
+            <p className="text-xs text-slate-400 mb-1">Passbook / Cheque Photo (optional)</p>
+            <div className="flex items-start gap-4">
+              <button type="button"
+                onClick={() => document.getElementById('passbook-file-input')?.click()}
+                className="flex items-center gap-2 px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg cursor-pointer hover:bg-slate-700 transition-colors">
+                <Upload className="w-4 h-4 text-slate-400" />
+                <span className="text-sm text-slate-300">{form.passbook_photo ? form.passbook_photo.name : 'Upload photo'}</span>
+              </button>
+              <input id="passbook-file-input" type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
+              {(photoPreview || record?.passbook_photo_url) && (
+                <img
+                  src={photoPreview || record?.passbook_photo_url}
+                  alt="Passbook"
+                  className="w-16 h-16 object-cover rounded-lg border border-slate-600"
+                />
+              )}
             </div>
           </div>
 

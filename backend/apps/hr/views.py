@@ -823,6 +823,7 @@ def payroll_dashboard(request):
             'ifsc_code':            getattr(getattr(ss.employee, 'bank_details', None), 'ifsc_code', None),
             'branch_name':          getattr(getattr(ss.employee, 'bank_details', None), 'branch_name', None),
             'upi_id':               getattr(getattr(ss.employee, 'bank_details', None), 'upi_id', None),
+            'passbook_photo_url':   ss.employee.bank_details.passbook_photo.url if (hasattr(ss.employee, 'bank_details') and ss.employee.bank_details and ss.employee.bank_details.passbook_photo) else None,
         })
 
     return Response({
