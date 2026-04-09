@@ -304,6 +304,7 @@ export const attendanceService = {
   checkout:  ()       => api.post('/attendance/checkout/'),
   today:     ()       => api.get('/attendance/today/'),
   myHistory: (params) => api.get('/attendance/my/', { params }),
+  myScore:   ()       => api.get('/attendance/my-score/'),
 
   // Admin
   presence:  ()       => api.get('/attendance/presence/'),
