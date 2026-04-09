@@ -71,14 +71,14 @@ def _detect_message_type(file_obj):
     return 'file'
 
 
-def _create_notification(user, title, message, notification_type='info'):
+def _create_notification(user, title, message, notification_type='system'):
     try:
-        from apps.notifications.models import Notification
-        Notification.objects.create(
-            user=user,
+        from apps.notifications.utils import create_notification
+        create_notification(
+            recipient=user,
             title=title,
             message=message,
-            notification_type=notification_type,
+            type=notification_type,
         )
     except Exception:
         pass

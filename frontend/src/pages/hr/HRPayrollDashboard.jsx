@@ -488,12 +488,12 @@ export default function HRPayrollDashboard() {
                             <Eye className="w-3 h-3" /> View Details
                           </button>
                         )}
-                        {row.has_payslip && (
+                        {row.has_payslip && row.payslip_id && (
                           <div className="flex items-center gap-1">
                             <button
-                              onClick={() => {/* payslip id from payslips API */}}
+                              onClick={() => handleDownload(row.payslip_id)}
                               className="p-1.5 text-slate-400 hover:text-indigo-400 hover:bg-slate-700 rounded-lg"
-                              title="View Payslips"
+                              title="Download Payslip"
                             >
                               <Download className="w-4 h-4" />
                             </button>

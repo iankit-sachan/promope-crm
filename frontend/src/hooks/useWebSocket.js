@@ -17,15 +17,17 @@ const ACTIVITY_FEED_ROLES = ['founder', 'admin', 'hr']
 export function useActivityFeed() {
   const wsRef = useRef(null)
   const reconnectTimerRef = useRef(null)
+  const pingIntervalRef = useRef(null)
   const { isAuthenticated, accessToken, user } = useAuthStore()
   const { addActivity, setInitialFeed, setConnected } = useActivityStore()
 
   const connect = useCallback(() => {
     if (!isAuthenticated || !accessToken) return
-    // Only founder / admin / hr are allowed to watch the global feed.
     if (!ACTIVITY_FEED_ROLES.includes(user?.role)) return
 
-    // Append token as query param (simplest auth for WS)
+    // Clear any existing ping interval before reconnecting
+    if (pingIntervalRef.current) clearInterval(pingIntervalRef.current)
+
     const url = `${WS_BASE}/ws/activity/?token=${accessToken}`
     const ws = new WebSocket(url)
     wsRef.current = ws
@@ -50,6 +52,7 @@ export function useActivityFeed() {
 
     ws.onclose = () => {
       setConnected(false)
+      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current)
       console.log('[WS] Activity feed disconnected. Reconnecting in 5s...')
       reconnectTimerRef.current = setTimeout(connect, 5000)
     }
@@ -60,18 +63,17 @@ export function useActivityFeed() {
     }
 
     // Keepalive ping every 30 seconds
-    const pingInterval = setInterval(() => {
+    pingIntervalRef.current = setInterval(() => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: 'ping' }))
       }
     }, 30000)
-
-    return () => clearInterval(pingInterval)
   }, [isAuthenticated, accessToken, user, addActivity, setInitialFeed, setConnected])
 
   useEffect(() => {
     connect()
     return () => {
+      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current)
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
       if (wsRef.current) wsRef.current.close()
     }

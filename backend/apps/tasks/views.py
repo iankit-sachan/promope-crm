@@ -153,7 +153,7 @@ class TaskDetailView(generics.RetrieveUpdateDestroyAPIView):
                     link=f'/tasks/{task.id}',
                 )
 
-        elif old_progress != task.progress:
+        if old_progress != task.progress:
             TaskHistory.objects.create(
                 task=task,
                 changed_by=self.request.user,
@@ -188,9 +188,17 @@ def update_task_progress(request, pk):
     Quick endpoint for updating task progress.
     """
     try:
-        task = Task.objects.get(pk=pk)
+        task = Task.objects.select_related('assigned_to').get(pk=pk)
     except Task.DoesNotExist:
         return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Ownership check: only assigned employee or manager+ can update progress
+    if not request.user.is_manager_or_above:
+        try:
+            if task.assigned_to != request.user.employee_profile:
+                return Response({'detail': 'You can only update your own tasks.'}, status=status.HTTP_403_FORBIDDEN)
+        except Exception:
+            return Response({'detail': 'Forbidden.'}, status=status.HTTP_403_FORBIDDEN)
 
     serializer = TaskProgressUpdateSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)

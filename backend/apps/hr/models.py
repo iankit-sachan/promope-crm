@@ -245,7 +245,7 @@ class EmployeeBankDetails(models.Model):
     passbook_photo       = models.ImageField(upload_to='bank_details/passbooks/', null=True, blank=True)
 
     # Approval workflow
-    status               = models.CharField(max_length=20, choices=Status.choices, default=Status.APPROVED)
+    status               = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     reviewed_by          = models.ForeignKey(
         'authentication.User', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='reviewed_bank_details',

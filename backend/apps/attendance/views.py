@@ -361,7 +361,7 @@ def attendance_weekly_report(request):
             'department':    emp.department.name if emp.department else None,
             'days_present':  days_present,
             'days_late':     days_late,
-            'days_absent':   7 - days_present,
+            'days_absent':   6 - days_present,  # Mon-Sat = 6 working days
             'total_hours':   round(total_hours, 2),
             'avg_hours':     avg_hours,
             'days':          day_breakdown,
@@ -478,10 +478,16 @@ def my_regularization_view(request):
     if not serializer.is_valid():
         return Response(serializer.errors, status=400)
 
-    # Prevent duplicate request for same date
+    # Prevent duplicate pending request for same date (allow resubmission after rejection)
     date = serializer.validated_data['date']
-    if AttendanceRegularization.objects.filter(employee=employee, date=date).exists():
-        return Response({'detail': 'A request for this date already exists.'}, status=400)
+    existing = AttendanceRegularization.objects.filter(employee=employee, date=date).first()
+    if existing:
+        if existing.status == 'pending':
+            return Response({'detail': 'A pending request for this date already exists.'}, status=400)
+        if existing.status == 'approved':
+            return Response({'detail': 'This date has already been regularized.'}, status=400)
+        # Rejected — delete old one to allow resubmission
+        existing.delete()
 
     reg = serializer.save(employee=employee)
 
