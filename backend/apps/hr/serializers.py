@@ -440,6 +440,9 @@ class CandidateListSerializer(serializers.ModelSerializer):
             'created_at',
         ]
         read_only_fields = ['application_date', 'created_at', 'converted_to_employee']
+        extra_kwargs = {
+            'applied_position': {'required': False},
+        }
 
     def get_position_title(self, obj):
         return obj.applied_position.job_title if obj.applied_position else None
