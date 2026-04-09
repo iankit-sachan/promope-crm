@@ -143,7 +143,7 @@ export default function HRPayrollDashboard() {
   const updatePaymentMutation = useMutation({
     mutationFn: ({ id, data }) => payrollService.paymentUpdate(id, data),
     onSuccess:  () => {
-      toast.success('Salary marked as paid')
+      toast.success('Salary marked as paid & payslip auto-generated')
       qc.invalidateQueries({ queryKey: ['payroll-dashboard'] })
     },
     onError: (err) => toast.error(err?.response?.data?.detail || 'Update failed'),
@@ -378,13 +378,18 @@ export default function HRPayrollDashboard() {
                           </button>
                         )}
                         {row.has_payslip && (
-                          <button
-                            onClick={() => {/* payslip id from payslips API */}}
-                            className="p-1.5 text-slate-400 hover:text-indigo-400 hover:bg-slate-700 rounded-lg"
-                            title="View Payslips"
-                          >
-                            <Download className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => {/* payslip id from payslips API */}}
+                              className="p-1.5 text-slate-400 hover:text-indigo-400 hover:bg-slate-700 rounded-lg"
+                              title="View Payslips"
+                            >
+                              <Download className="w-4 h-4" />
+                            </button>
+                            {row.payslip_auto_generated && (
+                              <span className="text-[10px] text-green-400/60 bg-green-500/10 px-1.5 py-0.5 rounded">Auto</span>
+                            )}
+                          </div>
                         )}
                       </div>
                     </td>
