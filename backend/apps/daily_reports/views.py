@@ -297,6 +297,18 @@ def review_report(request, pk):
         target_name=str(report),
     )
 
+    # Notify the employee that their report was reviewed
+    create_notification(
+        recipient=report.employee.user,
+        title='Daily Report Reviewed',
+        message=f'Your daily report for {report.report_date} has been reviewed by {request.user.full_name}.',
+        type='system',
+        priority='normal',
+        target_type='daily_report',
+        target_id=report.id,
+        link='/daily-report',
+    )
+
     serializer = DailyReportDetailSerializer(report, context={'request': request})
     return Response(serializer.data)
 

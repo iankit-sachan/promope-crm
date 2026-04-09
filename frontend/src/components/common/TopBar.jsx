@@ -23,8 +23,9 @@ export default function TopBar({ onToggleSidebar, sidebarOpen }) {
       task:       ['tasks'],
       employee:   ['employees'],
       attendance: ['attendance-today', 'attendance-my'],
-      salary:     ['salary'],
-      payslip:    ['payslips'],
+      salary:       ['salary'],
+      payslip:      ['payslips'],
+      daily_report: ['all-daily-reports', 'daily-report-analytics', 'daily-report-today', 'my-daily-reports'],
     }
     keyMap[resource_type]?.forEach(k => qc.invalidateQueries({ queryKey: [k] }))
   }, [qc])

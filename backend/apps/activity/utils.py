@@ -96,7 +96,9 @@ _VERB_SYNC_MAP = {
     'salary_updated':    ('salary',    'updated'),
     'salary_paid':       ('salary',    'updated'),
     'payslip_generated': ('payslip',   'created'),
-    'progress_updated':  ('task',      'updated'),
+    'progress_updated':          ('task',          'updated'),
+    'daily_report_submitted':    ('daily_report',  'created'),
+    'daily_report_reviewed':     ('daily_report',  'updated'),
 }
 
 
