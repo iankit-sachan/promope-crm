@@ -74,6 +74,10 @@ function AddCandidateModal({ jobs, onClose, onSave, isSaving }) {
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   const handleSave = () => {
+    if (showNewJob) {
+      toast.error('Please create the job position first (click +) or cancel (click X)')
+      return
+    }
     if (!form.candidate_name.trim() || !form.email.trim()) {
       toast.error('Name and email are required')
       return
