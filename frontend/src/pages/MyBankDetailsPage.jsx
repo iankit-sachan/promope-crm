@@ -14,10 +14,10 @@ export default function MyBankDetailsPage() {
   const [showAcct, setShowAcct] = useState(false)
   const [showPan, setShowPan] = useState(false)
 
-  // Fetch own bank details (backend auto-scopes to current user)
+  // Fetch only MY bank details (mine=true forces own record even for HR+)
   const { data: bankList = [], isLoading } = useQuery({
     queryKey: ['my-bank-details'],
-    queryFn: () => payrollService.bankList().then((r) =>
+    queryFn: () => payrollService.bankList({ mine: 'true' }).then((r) =>
       Array.isArray(r.data) ? r.data : r.data?.results ?? []
     ),
   })
