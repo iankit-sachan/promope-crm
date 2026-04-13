@@ -828,7 +828,7 @@ def payroll_dashboard(request):
             'bank_status':          getattr(getattr(ss.employee, 'bank_details', None), 'status', None),
             'bank_name':            getattr(getattr(ss.employee, 'bank_details', None), 'bank_name', None),
             'account_holder_name':  getattr(getattr(ss.employee, 'bank_details', None), 'account_holder_name', None),
-            'account_number':       (lambda a: f'****{a[-4:]}' if a and len(a) >= 4 else a)(getattr(getattr(ss.employee, 'bank_details', None), 'account_number', None)),
+            'account_number':       getattr(getattr(ss.employee, 'bank_details', None), 'account_number', None),
             'ifsc_code':            getattr(getattr(ss.employee, 'bank_details', None), 'ifsc_code', None),
             'branch_name':          getattr(getattr(ss.employee, 'bank_details', None), 'branch_name', None),
             'upi_id':               getattr(getattr(ss.employee, 'bank_details', None), 'upi_id', None),
