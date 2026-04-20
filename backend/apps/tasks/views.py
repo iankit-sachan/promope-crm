@@ -95,6 +95,71 @@ class TaskListCreateView(generics.ListCreateAPIView):
             )
 
 
+@api_view(['POST'])
+@permission_classes([IsManagerOrAbove])
+def bulk_create_tasks(request):
+    """
+    POST /api/tasks/bulk/
+    Body: { ...task fields, assigned_to_ids: [1, 2, 3] }
+    Creates one task per employee. Returns list of created tasks.
+    """
+    data = request.data.copy()
+    assigned_to_ids = data.pop('assigned_to_ids', [])
+
+    if not assigned_to_ids or not isinstance(assigned_to_ids, list):
+        return Response({'detail': 'assigned_to_ids must be a non-empty list.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not data.get('name', '').strip():
+        return Response({'detail': 'Task name is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    from apps.employees.models import Employee
+    employees = Employee.objects.filter(id__in=assigned_to_ids)
+    if not employees.exists():
+        return Response({'detail': 'No valid employees found.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    created_tasks = []
+    for emp in employees:
+        task_data = {
+            'name':        data.get('name', '').strip(),
+            'description': data.get('description', '').strip(),
+            'assigned_to': emp,
+            'assigned_by': request.user,
+            'department_id': data.get('department') or None,
+            'priority':    data.get('priority', 'medium'),
+            'status':      data.get('status', 'pending'),
+            'start_date':  data.get('start_date') or None,
+            'deadline':    data.get('deadline') or None,
+            'progress':    int(data.get('progress', 0)),
+        }
+        task = Task.objects.create(**task_data)
+        created_tasks.append(task)
+
+        log_activity(
+            actor=request.user,
+            verb='task_created',
+            description=f'{request.user.full_name} created task "{task.name}" for {emp.full_name}',
+            target_type='task',
+            target_id=task.id,
+            target_name=task.name,
+        )
+
+        create_notification(
+            recipient=emp.user,
+            title='New Task Assigned',
+            message=f'You have been assigned to task "{task.name}".',
+            type='task_assigned',
+            target_type='task',
+            target_id=task.id,
+            link=f'/tasks/{task.id}',
+        )
+
+    return Response({
+        'detail': f'{len(created_tasks)} task(s) created.',
+        'count': len(created_tasks),
+        'tasks': TaskListSerializer(created_tasks, many=True).data,
+    }, status=status.HTTP_201_CREATED)
+
+
 class TaskDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
     GET    /api/tasks/{id}/   - Task detail

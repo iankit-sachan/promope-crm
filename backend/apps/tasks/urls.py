@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     path('', views.TaskListCreateView.as_view(), name='task-list-create'),
+    path('bulk/', views.bulk_create_tasks, name='task-bulk-create'),
     path('<int:pk>/', views.TaskDetailView.as_view(), name='task-detail'),
     path('<int:pk>/progress/', views.update_task_progress, name='task-progress'),
     path('<int:pk>/comments/', views.add_task_comment, name='task-comments'),
