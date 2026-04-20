@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Edit, UserX, UserCheck, X, ChevronDown, UserPlus } from 'lucide-react'
+import { Search, Edit, UserX, UserCheck, X, ChevronDown, UserPlus, Trash2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { employeeService, departmentService } from '../../services/api'
 import { formatDate, initials } from '../../utils/helpers'
@@ -145,6 +145,21 @@ export default function EmployeesHRPage() {
     onError: () => toast.error('Update failed'),
   })
 
+  const deleteMutation = useMutation({
+    mutationFn: (id) => employeeService.delete(id),
+    onSuccess: () => {
+      toast.success('Employee removed')
+      qc.invalidateQueries({ queryKey: ['hr-employees'] })
+    },
+    onError: (err) => toast.error(err.response?.data?.detail || 'Delete failed'),
+  })
+
+  const handleDelete = (emp) => {
+    if (window.confirm(`Are you sure you want to remove ${emp.full_name}? Their account will be deactivated.`)) {
+      deleteMutation.mutate(emp.id)
+    }
+  }
+
   const employees  = empData?.results || empData || []
   const departments = deptData?.results || deptData || []
 
@@ -278,6 +293,14 @@ export default function EmployeesHRPage() {
                             ? <UserX className="w-4 h-4" />
                             : <UserCheck className="w-4 h-4" />
                           }
+                        </button>
+                        <button
+                          onClick={() => handleDelete(emp)}
+                          disabled={deleteMutation.isPending}
+                          className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg"
+                          title="Delete employee"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
