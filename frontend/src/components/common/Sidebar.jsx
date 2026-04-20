@@ -38,7 +38,7 @@ const navConfig = [
 
   // Management
   { group: 'Management', icon: MonitorDot, roles: ['founder','admin','manager','hr'], children: [
-    { to: '/employees',      label: 'Employees',      icon: Users,          roles: ['founder','admin','manager'] },
+    { to: '/employees',      label: 'Employees',      icon: Users,          roles: ['founder','admin','manager','hr'] },
     { to: '/departments',    label: 'Departments',     icon: Building2,      roles: ['founder','admin','manager','hr'] },
     { to: '/attendance',     label: 'Attendance',      icon: CalendarDays,   roles: ['founder','admin','manager'] },
     { to: '/analytics',      label: 'Analytics',       icon: BarChart3,      roles: ['founder','admin','manager'] },
